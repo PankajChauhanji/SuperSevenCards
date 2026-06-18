@@ -13,7 +13,7 @@ from flask import request
 from flask_socketio import join_room as sio_join, emit
 
 from config import DEFAULT_SETTINGS, SETTINGS_BOUNDS, MIN_PLAYERS
-from game.room import STATE_LOBBY, STATE_IN_GAME
+from game.room import STATE_LOBBY
 from sockets.common import bind_sid, error
 
 NAME_MAX = 20
@@ -113,6 +113,11 @@ def register(socketio, manager):
             to=code,
         )
 
+        # Reconnecting mid-round: resend this player's view of the table.
+        if room.in_round():
+            emit("round_start", room.public_round_state())
+            emit("your_hand", {"cards": room.hand_for(user_id)})
+
     @socketio.on("start_game")
     def on_start(data):
         data = data or {}
@@ -128,6 +133,9 @@ def register(socketio, manager):
         if len(room.connected_players()) < MIN_PLAYERS:
             return error(f"Need at least {MIN_PLAYERS} players to start.")
 
-        # Phase 0 placeholder: real dealing/turn setup arrives in Phase 1.
-        room.state = STATE_IN_GAME
-        emit("game_started", {}, to=code)
+        # Deal the first round and tell everyone.
+        room.start_round()
+        emit("round_start", room.public_round_state(), to=code)
+        # Each player privately receives only their own hand — never others'.
+        for player in room.connected_players():
+            emit("your_hand", {"cards": room.hand_for(player.user_id)}, to=player.sid)

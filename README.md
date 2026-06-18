@@ -3,9 +3,11 @@
 Real-time multiplayer card game (Flask-SocketIO + vanilla JS). Shed your hand,
 call **Stop** when you think you're lowest, survive the elimination cap.
 
-**Build status:** Phase 0 — Skeleton + Lobby. Create/join rooms, live roster,
-host-only start, reconnection via stable client identity. The table (dealing,
-drawing, discarding, scoring) lands in later phases.
+**Build status:** Phase 1 — Deal & Render. Rooms/lobby plus a dealt round:
+each player sees their own hand face-up, opponents as face-down counts, the
+deck and (empty) center, and a green boundary on the active player. Card faces
+are generated SVGs (see `tools/generate_cards.py`). Turn actions — throwing,
+drawing, Stop — arrive in Phase 2+.
 
 ## Run locally
 
@@ -41,8 +43,19 @@ gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT app:app
 
 `render.yaml` is included for one-click Render Blueprint deploys.
 
-## Tests
+## Card images
+
+Faces are generated SVGs, not a third-party pack. Regenerate any time with:
 
 ```bash
-python test_phase0.py    # needs the server running on PORT=5005
+python tools/generate_cards.py    # writes static/img/cards/*.svg
+```
+
+## Tests
+
+With the server running on `PORT=5005`:
+
+```bash
+python test_phase0.py    # lobby: create/join/start, reconnect, host migration
+python test_phase1.py    # deal correctness, privacy, mid-round reconnect
 ```
