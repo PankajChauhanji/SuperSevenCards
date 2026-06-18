@@ -19,7 +19,10 @@
     center: [],
     hand: [],
     roundNumber: 0,
+    awaitingDraw: false,
+    lastWasCombo: false,
   };
+  window.SS.view = view; // selection.js reads this live reference
 
   const lobbyView = document.getElementById("lobby-view");
   const tableView = document.getElementById("table-view");
@@ -53,19 +56,52 @@
 
   socket.on("round_start", (data) => {
     view.state = "IN_TURN";
+    applyTable(data);
+    if (window.Selection) window.Selection.reset();
+    sync();
+  });
+
+  socket.on("table_state", (data) => {
+    applyTable(data);
+    if (view.state === "IN_TURN") {
+      Table.render(view);
+      if (window.Selection) window.Selection.refresh();
+    }
+  });
+
+  function applyTable(data) {
     view.players = data.players;
     view.currentTurn = data.current_turn;
     view.turnOrder = data.turn_order;
     view.deckCount = data.deck_count;
     view.center = data.center;
     view.roundNumber = data.round_number;
-    sync();
-  });
+    view.awaitingDraw = !!data.awaiting_draw;
+    view.lastWasCombo = !!data.last_was_combo;
+  }
 
   socket.on("your_hand", (data) => {
     view.hand = data.cards || [];
-    if (view.state === "IN_TURN") Table.render(view);
+    if (window.Selection) window.Selection.reset();
+    if (view.state === "IN_TURN") {
+      Table.render(view);
+    }
   });
+
+  socket.on("cards_played", (data) => {
+    if (data.by === youId) return; // your own action shows via your_hand
+    const p = view.players.find((x) => x.user_id === data.by);
+    const who = p ? p.name : "Someone";
+    const verb = {
+      single: "discarded a card",
+      set: "played a set",
+      sequence: "played a sequence",
+      match: "matched the throw",
+    }[data.action_type] || "played";
+    showToast(who + " " + verb);
+  });
+
+  socket.on("deck_reshuffled", () => showToast("Deck reshuffled"));
 
   // ---- view switching ----
   function sync() {
@@ -130,6 +166,11 @@
     b.textContent = text;
     b.style.marginLeft = "0.4rem";
     return b;
+  }
+
+  // ---- selection / actions ----
+  if (window.Selection) {
+    window.Selection.init({ socket, code, you: youId });
   }
 
   // ---- rules modal ----

@@ -6,11 +6,13 @@ scoring, and the timer arrive in later phases — the fields they need are added
 when those phases are built so this file stays honest about what exists.
 """
 import time
+import random
 from typing import Dict, List, Optional
 
 from config import MAX_PLAYERS, HAND_SIZE
 from game.player import Player
 from game.cards import shuffled_deck
+from game.rules import DRAW_ACTIONS, COMBO_ACTIONS
 
 # Game states. Turn actions (AWAITING_DRAW) and end states (ROUND_END | GAME_END)
 # are wired in later phases; Phase 1 deals into IN_TURN and renders.
@@ -35,6 +37,7 @@ class Room:
         self.last_was_combo = False       # gates Action D (Match) in Phase 2
         self.turn_order: List[str] = []   # active user_ids, seating order
         self.turn_index = 0
+        self.awaiting_draw = False        # current player owes a draw
 
     # ---- registration / attachment ----
     def register_player(self, user_id: str, name: str) -> Player:
@@ -107,6 +110,7 @@ class Room:
         self.last_was_combo = False
         self.turn_order = active
         self.turn_index = 0
+        self.awaiting_draw = False
         self.round_number += 1
         self.state = STATE_IN_TURN
 
@@ -115,11 +119,91 @@ class Room:
             return None
         return self.turn_order[self.turn_index % len(self.turn_order)]
 
+    def center_rank_set(self) -> set:
+        """Rank set of the current matchable combo (empty if last wasn't combo)."""
+        if not self.last_was_combo:
+            return set()
+        return {c.rank for c in self.center_throw}
+
+    def card_objects(self, user_id: str, card_ids: List[str]) -> Optional[List]:
+        """Resolve card ids to Card objects in the player's hand.
+
+        Returns None if any id is missing or duplicated (an illegal selection).
+        Card ids are unique within a deck, so a valid selection has no repeats.
+        """
+        player = self.players.get(user_id)
+        if player is None or not card_ids:
+            return None
+        if len(set(card_ids)) != len(card_ids):
+            return None
+        by_id = {c.id: c for c in player.hand}
+        cards = []
+        for cid in card_ids:
+            card = by_id.get(cid)
+            if card is None:
+                return None
+            cards.append(card)
+        return cards
+
+    def apply_throw(self, user_id: str, cards: List, action: str) -> bool:
+        """Apply a validated throw. Returns True if the player now owes a draw."""
+        player = self.players[user_id]
+        thrown_ids = {c.id for c in cards}
+        player.hand = [c for c in player.hand if c.id not in thrown_ids]
+
+        # The previous visible throw is now buried in the discard pile.
+        self.discard_pile.extend(self.center_throw)
+        self.center_throw = list(cards)
+        # A match does NOT leave a matchable combo (no chaining).
+        self.last_was_combo = action in COMBO_ACTIONS
+
+        owes_draw = action in DRAW_ACTIONS
+        if owes_draw:
+            self.awaiting_draw = True
+            # Turn does not advance until the draw is taken.
+        else:
+            # Only a no-draw combo can empty a hand -> player is safe.
+            if not player.hand:
+                player.is_safe = True
+            self.awaiting_draw = False
+            self.advance_turn()
+        return owes_draw
+
+    def draw_one(self, user_id: str) -> bool:
+        """Take the owed draw, reshuffling if needed, then advance. True if reshuffled."""
+        reshuffled = False
+        if not self.draw_pile and self.discard_pile:
+            # Reshuffle the buried discards (the visible center stays on the table).
+            random.shuffle(self.discard_pile)
+            self.draw_pile = self.discard_pile
+            self.discard_pile = []
+            reshuffled = True
+        if self.draw_pile:
+            self.players[user_id].hand.append(self.draw_pile.pop())
+        # If both piles are empty there is nothing to draw; the turn still passes.
+        self.awaiting_draw = False
+        self.advance_turn()
+        return reshuffled
+
+    def advance_turn(self) -> None:
+        """Move to the next player who can act (not safe, not eliminated)."""
+        n = len(self.turn_order)
+        if n == 0:
+            return
+        for _ in range(n):
+            self.turn_index = (self.turn_index + 1) % n
+            player = self.players.get(self.turn_order[self.turn_index])
+            if player and not player.is_safe and not player.eliminated:
+                return
+        # No eligible player remains — round-end handling arrives in Phase 3.
+
     def public_round_state(self) -> dict:
         """Common, privacy-safe snapshot shared by every player (no hands)."""
         return {
+            "state": self.state,
             "round_number": self.round_number,
             "current_turn": self.current_turn_id(),
+            "awaiting_draw": self.awaiting_draw,
             "turn_order": list(self.turn_order),
             "deck_count": len(self.draw_pile),
             "center": [c.to_dict() for c in self.center_throw],

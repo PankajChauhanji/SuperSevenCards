@@ -541,3 +541,72 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .scoreboard { flex: 1 1 auto; width: 100%; position: static; }
   .center-row { gap: 1.5rem; }
 }
+
+/* ---------- card selection ---------- */
+.card-slot { position: relative; display: inline-block; line-height: 0; }
+.card-slot .tick {
+  position: absolute;
+  top: -8px; right: -8px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 22px;
+  text-align: center;
+  font-weight: 700;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: none;
+}
+.card-slot.selected .tick { opacity: 1; transform: scale(1); }
+.card-slot .hand-card { cursor: pointer; }
+.card-slot.selected .hand-card {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+  transform: translateY(-10px);
+}
+.card-slot.locked .hand-card { cursor: default; }
+
+/* ---------- action bar ---------- */
+.action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.4rem;
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+.play-label { font-size: 0.88rem; min-width: 11rem; text-align: right; }
+.play-label.muted { color: var(--muted); }
+.play-label.ok { color: var(--turn); font-weight: 600; }
+.play-label.bad { color: var(--accent); }
+.play-label.draw { color: var(--gold); font-weight: 600; }
+.action-btns { display: flex; gap: 0.6rem; }
+.btn-throw {
+  background: var(--gold);
+  color: var(--ink);
+  min-width: 96px;
+}
+.btn-throw:hover:not(:disabled) { filter: brightness(1.06); }
+.btn-stop {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  min-width: 80px;
+}
+.btn-stop:hover:not(:disabled) { background: var(--accent); color: #fff; }
+
+/* deck becomes interactive only when a draw is owed by the viewer */
+.deck.clickable img {
+  cursor: pointer;
+  outline: 3px solid var(--turn);
+  outline-offset: 2px;
+  animation: deckpulse 1.1s ease-in-out infinite;
+}
+@keyframes deckpulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(87, 217, 138, 0.0); }
+  50% { box-shadow: 0 0 0 6px rgba(87, 217, 138, 0.25); }
+}

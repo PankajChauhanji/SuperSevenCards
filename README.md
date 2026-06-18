@@ -3,11 +3,12 @@
 Real-time multiplayer card game (Flask-SocketIO + vanilla JS). Shed your hand,
 call **Stop** when you think you're lowest, survive the elimination cap.
 
-**Build status:** Phase 1 — Deal & Render. Rooms/lobby plus a dealt round:
-each player sees their own hand face-up, opponents as face-down counts, the
-deck and (empty) center, and a green boundary on the active player. Card faces
-are generated SVGs (see `tools/generate_cards.py`). Turn actions — throwing,
-drawing, Stop — arrive in Phase 2+.
+**Build status:** Phase 2 — Turn engine. Full turn play: select cards and
+Throw, with the server inferring the action (single / set / sequence / match)
+and enforcing legality; manual draw by clicking the deck when one is owed; turn
+rotation; deck reshuffle when the draw pile empties. A live label shows what the
+current selection will do. Endgame (Stop, scoring, elimination) and the turn
+timer arrive in Phase 3+.
 
 ## Run locally
 
@@ -53,9 +54,15 @@ python tools/generate_cards.py    # writes static/img/cards/*.svg
 
 ## Tests
 
+```bash
+python test_rules.py            # pure rules engine (no server needed)
+python test_phase2_engine.py    # room turn logic, deterministic (no server)
+```
+
 With the server running on `PORT=5005`:
 
 ```bash
-python test_phase0.py    # lobby: create/join/start, reconnect, host migration
-python test_phase1.py    # deal correctness, privacy, mid-round reconnect
+python test_phase0.py           # lobby: create/join/start, reconnect, host migration
+python test_phase1.py           # deal correctness, privacy, mid-round reconnect
+python test_phase2_socket.py    # play/draw flow and rejections over the wire
 ```

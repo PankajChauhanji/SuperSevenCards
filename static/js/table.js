@@ -109,6 +109,10 @@
   function renderCenter(state) {
     document.getElementById("deck-count").textContent = state.deckCount;
 
+    const deck = document.getElementById("deck");
+    const myDraw = state.you === state.currentTurn && state.awaitingDraw;
+    deck.classList.toggle("clickable", !!myDraw);
+
     const discard = document.getElementById("discard");
     const empty = document.getElementById("discard-empty");
     // Clear previously rendered center cards (keep label + empty marker).
@@ -144,8 +148,17 @@
     const hand = document.getElementById("hand");
     hand.innerHTML = "";
     (state.hand || []).forEach((card) => {
-      hand.appendChild(cardImg(card, "hand-card"));
+      const slot = document.createElement("div");
+      slot.className = "card-slot";
+      slot.dataset.id = card.id;
+      slot.appendChild(cardImg(card, "hand-card"));
+      const tick = document.createElement("span");
+      tick.className = "tick";
+      tick.textContent = "\u2713";
+      slot.appendChild(tick);
+      hand.appendChild(slot);
     });
+    if (window.Selection) window.Selection.refresh();
   }
 
   window.Table = {
