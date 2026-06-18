@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Super Seven</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <main class="home">
+    <header>
+      <div class="wordmark">SUPER <span class="seven">SEVEN</span> <span class="pip">♠ ♥ ♦ ♣</span></div>
+      <p class="tagline">Dump your hand. Call it before they catch you.</p>
+    </header>
+
+    <section class="card-panel">
+      <div class="field">
+        <label for="name">Your name</label>
+        <input type="text" id="name" maxlength="20" autocomplete="off" placeholder="e.g. Riya" />
+      </div>
+
+      <button class="btn-primary" id="create-btn">Create a room</button>
+
+      <button class="settings-toggle" id="settings-toggle" type="button">Game settings ▸</button>
+      <div class="settings-grid hidden" id="settings-grid">
+        <div>
+          <label for="set_max_score">Max score (out)</label>
+          <input type="number" id="set_max_score" value="100" min="20" max="1000" />
+        </div>
+        <div>
+          <label for="set_stop_penalty">Stop penalty</label>
+          <input type="number" id="set_stop_penalty" value="40" min="0" max="200" />
+        </div>
+        <div>
+          <label for="set_win_discount">Win discount</label>
+          <input type="number" id="set_win_discount" value="5" min="0" max="50" />
+        </div>
+        <div>
+          <label for="set_turn_timer">Turn timer (s)</label>
+          <input type="number" id="set_turn_timer" value="40" min="15" max="180" />
+        </div>
+        <div>
+          <label for="set_timeout_limit">Timeouts allowed</label>
+          <input type="number" id="set_timeout_limit" value="3" min="1" max="10" />
+        </div>
+      </div>
+    </section>
+
+    <p class="divider">or join one</p>
+
+    <section class="card-panel">
+      <div class="field">
+        <label for="code">Room code</label>
+        <input type="text" id="code" class="code-input" maxlength="4" autocomplete="off" placeholder="ABCD" />
+      </div>
+      <button class="btn-ghost" id="join-btn">Join room</button>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='js/identity.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/socket.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+</body>
+</html>

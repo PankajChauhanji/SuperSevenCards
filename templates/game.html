@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Super Seven · {{ code }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="wordmark">SUPER <span class="seven">SEVEN</span></div>
+    <button class="icon-btn" id="rules-btn" title="Game rules" aria-label="Game rules">?</button>
+  </div>
+
+  <!-- Lobby -->
+  <main class="lobby" id="lobby-view">
+    <div class="code-banner">
+      <div class="label">Room code</div>
+      <div class="code" id="room-code">····</div>
+      <button class="copy-hint" id="copy-btn">Tap to copy &amp; share</button>
+    </div>
+
+    <ul class="roster" id="roster"></ul>
+    <p class="meta" id="lobby-meta">Connecting…</p>
+    <div class="start-row" id="start-row"></div>
+  </main>
+
+  <!-- Shown after the host starts (full table arrives in Phase 1) -->
+  <main class="placeholder" id="placeholder-view" style="display:none">
+    <h2>Game started</h2>
+    <p>The table comes alive in the next build — dealing, drawing, and discarding land in Phase 1.</p>
+  </main>
+
+  <!-- Rules modal -->
+  <div class="modal-backdrop" id="rules-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Super Seven rules">
+      <h2>How to play Super Seven</h2>
+      <p>Shed the points in your hand, then call <strong>Stop</strong> when you think you are lowest. Lowest cumulative score survives; cross the max and you are out.</p>
+
+      <h3>Card values</h3>
+      <p>Ace = 1 · numbers = face value · Jack = 11 · Queen = 12 · King = 13.</p>
+
+      <h3>On your turn — pick one</h3>
+      <ul>
+        <li><strong>Discard one card</strong> — then draw one from the deck.</li>
+        <li><strong>Set</strong> — throw 3 or 4 of the same rank; no draw.</li>
+        <li><strong>Sequence</strong> — throw 3+ cards in a run (suits don't matter); no draw.</li>
+        <li><strong>Match</strong> — if the player before you threw a combo, throw any cards whose ranks appear in it, then draw one.</li>
+      </ul>
+
+      <h3>Going to zero</h3>
+      <p>Empty your hand and your round score locks at 0 — you are safe and sit out the rest of the round.</p>
+
+      <h3>Calling Stop</h3>
+      <p>Only at the start of your turn, and never during the first orbit. If you are strictly lowest you win the round (your score drops by the win discount). If anyone ties or beats you, you take a heavy penalty on top of your hand.</p>
+
+      <div class="close-row">
+        <button class="btn-primary" id="rules-close">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>window.SS_ROOM_CODE = {{ code | tojson }};</script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='js/identity.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/socket.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
