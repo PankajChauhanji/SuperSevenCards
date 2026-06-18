@@ -1,53 +1,89 @@
-// Game page (Phase 0 = lobby). Attaches to the room, renders the roster, and
-// lets the host start. The table itself arrives in Phase 1.
+// Game page controller. Holds the client's view of the room and routes server
+// events to either the lobby or the table renderer. Actions (throw/draw/stop)
+// arrive in later phases; Phase 1 deals and renders only.
 (function () {
   const { socket, showToast } = window.SS;
 
   const code = window.SS_ROOM_CODE;
   const youId = window.Identity.userId();
 
-  let hostId = null;
-  let state = "LOBBY";
+  // Single source of truth for what this client is showing.
+  const view = {
+    you: youId,
+    hostId: null,
+    state: "LOBBY",
+    players: [],
+    currentTurn: null,
+    turnOrder: [],
+    deckCount: 0,
+    center: [],
+    hand: [],
+    roundNumber: 0,
+  };
 
+  const lobbyView = document.getElementById("lobby-view");
+  const tableView = document.getElementById("table-view");
   const codeEl = document.getElementById("room-code");
   const rosterEl = document.getElementById("roster");
   const metaEl = document.getElementById("lobby-meta");
   const startRow = document.getElementById("start-row");
-  const lobbyView = document.getElementById("lobby-view");
-  const placeholderView = document.getElementById("placeholder-view");
 
   codeEl.textContent = code;
 
-  // Attach this socket to the room (also handles reconnect after refresh).
+  // ---- attach / reconnect ----
   function enter() {
     socket.emit("enter_room", { code, name: window.Identity.name(), user_id: youId });
   }
   socket.on("connect", enter);
   if (socket.connected) enter();
 
+  // ---- server events ----
   socket.on("room_joined", (data) => {
-    hostId = data.host_id;
-    state = data.state;
-    renderPlayers(data.players);
-    syncView();
+    view.hostId = data.host_id;
+    view.state = data.state;
+    view.players = data.players;
+    sync();
   });
 
   socket.on("player_list", (data) => {
-    hostId = data.host_id;
-    renderPlayers(data.players);
-    syncView();
+    view.hostId = data.host_id;
+    view.players = data.players;
+    sync();
   });
 
-  socket.on("game_started", () => {
-    state = "IN_GAME";
-    syncView();
+  socket.on("round_start", (data) => {
+    view.state = "IN_TURN";
+    view.players = data.players;
+    view.currentTurn = data.current_turn;
+    view.turnOrder = data.turn_order;
+    view.deckCount = data.deck_count;
+    view.center = data.center;
+    view.roundNumber = data.round_number;
+    sync();
   });
 
-  function renderPlayers(players) {
+  socket.on("your_hand", (data) => {
+    view.hand = data.cards || [];
+    if (view.state === "IN_TURN") Table.render(view);
+  });
+
+  // ---- view switching ----
+  function sync() {
+    const inRound = view.state === "IN_TURN";
+    lobbyView.style.display = inRound ? "none" : "block";
+    tableView.style.display = inRound ? "flex" : "none";
+    if (inRound) {
+      Table.render(view);
+    } else {
+      renderLobby();
+    }
+  }
+
+  // ---- lobby rendering ----
+  function renderLobby() {
     rosterEl.innerHTML = "";
-    players.forEach((p) => {
+    view.players.forEach((p) => {
       const li = document.createElement("li");
-
       const who = document.createElement("div");
       who.className = "who";
       const dot = document.createElement("span");
@@ -59,33 +95,18 @@
       who.appendChild(name);
 
       const tags = document.createElement("div");
-      if (p.user_id === hostId) tags.appendChild(badge("Host", "host"));
-      if (p.user_id === youId) tags.appendChild(badge("You", "you"));
+      if (p.user_id === view.hostId) tags.appendChild(makeBadge("Host", "host"));
+      if (p.user_id === youId) tags.appendChild(makeBadge("You", "you"));
 
       li.appendChild(who);
       li.appendChild(tags);
       rosterEl.appendChild(li);
     });
 
-    const count = players.length;
-    metaEl.textContent = count + (count === 1 ? " player" : " players") + " in the room";
-  }
+    const n = view.players.length;
+    metaEl.textContent = n + (n === 1 ? " player" : " players") + " in the room";
 
-  function badge(text, kind) {
-    const b = document.createElement("span");
-    b.className = "badge " + kind;
-    b.textContent = text;
-    b.style.marginLeft = "0.4rem";
-    return b;
-  }
-
-  function syncView() {
-    const inGame = state !== "LOBBY";
-    lobbyView.style.display = inGame ? "none" : "block";
-    placeholderView.style.display = inGame ? "block" : "none";
-    if (inGame) return;
-
-    const isHost = youId === hostId;
+    const isHost = youId === view.hostId;
     startRow.innerHTML = "";
     if (isHost) {
       const btn = document.createElement("button");
@@ -98,9 +119,17 @@
     } else {
       const p = document.createElement("p");
       p.className = "waiting";
-      p.textContent = "Waiting for the host to start…";
+      p.textContent = "Waiting for the host to start\u2026";
       startRow.appendChild(p);
     }
+  }
+
+  function makeBadge(text, kind) {
+    const b = document.createElement("span");
+    b.className = "badge " + kind;
+    b.textContent = text;
+    b.style.marginLeft = "0.4rem";
+    return b;
   }
 
   // ---- rules modal ----
