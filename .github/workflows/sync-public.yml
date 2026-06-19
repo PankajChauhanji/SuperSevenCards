@@ -54,6 +54,12 @@ jobs:
           echo "📁 Root directory:"
           ls -la
           echo ""
+          echo "📁 game/ folder:"
+          ls -la game/ || echo "⚠️ game/ folder not found"
+          echo ""
+          echo "📁 sockets/ folder:"
+          ls -la sockets/ || echo "⚠️ sockets/ folder not found"
+          echo ""
 
       - name: Remove core logic and sensitive files
         run: |
@@ -79,21 +85,35 @@ jobs:
             fi
           }
 
-          # ── Add files/folders to remove below ──
-          # remove_file game/room.py
-          # remove_dir  game/manager.py
-          # remove_dir sockets/gameplay.py
-          # remove_dir sockets/lobby.py
+          # ── Core game engine (room state, rules, scoring, manager) ──
+          remove_file game/manager.py
+          remove_file game/room.py
 
-          # ── Always remove these ──
+          # ── Core socket handlers (game flow, lobby, director loop) ──
+          remove_file sockets/gameplay.py
+          remove_file sockets/lobby.py
+
+          # ── Test files (expose internal logic and edge cases) ──
+
+          # ── Pycache folders (compiled bytecode, never needed in any repo) ──
+          remove_dir game/__pycache__
+          remove_dir sockets/__pycache__
+          remove_dir __pycache__
+
+          # ── Secrets and environment files ──
           remove_file .env
           remove_file .env.local
           remove_file .env.production
-          remove_dir  .github          # never push workflow files to public repo
+
+          # ── Workflow files (critical — prevents workflow scope error) ──
+          remove_dir .github
 
           echo ""
-          echo "📁 Root after removal:"
-          ls -la
+          echo "📁 game/ folder after removal:"
+          ls -la game/ || echo "⚠️ game/ folder not found"
+          echo ""
+          echo "📁 sockets/ folder after removal:"
+          ls -la sockets/ || echo "⚠️ sockets/ folder not found"
           echo ""
 
       - name: Debug — Git Status Before Push
