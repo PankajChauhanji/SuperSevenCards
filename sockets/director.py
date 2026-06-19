@@ -63,5 +63,7 @@ def _tick(socketio, manager):
         # Normal case: the turn moved on. Update the timed-out player's hand
         # (if still connected) and broadcast the new table state.
         if sid:
-            socketio.emit("your_hand", {"cards": room.hand_for(cur)}, to=sid)
+            socketio.emit("your_hand",
+                          {"cards": room.hand_for(cur), "drawn": info.get("drawn")},
+                          to=sid)
         socketio.emit("table_state", room.public_round_state(), to=code)

@@ -20,6 +20,7 @@ class Player:
     connected: bool = False
     timeout_count: int = 0       # cumulative timeouts this game
     eliminated: bool = False     # out of the game
+    color_index: int = 0         # stable per-player colour (assigned at join)
 
     def public_view(self) -> dict:
         """Everything other players are allowed to see. No card faces."""
@@ -31,4 +32,5 @@ class Player:
             "is_safe": self.is_safe,
             "connected": self.connected,
             "eliminated": self.eliminated,
+            "color": self.color_index,
         }

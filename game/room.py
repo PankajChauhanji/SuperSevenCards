@@ -54,7 +54,7 @@ class Room:
         """Add a player without binding a socket (pre-navigation step)."""
         player = self.players.get(user_id)
         if player is None:
-            player = Player(user_id=user_id, name=name)
+            player = Player(user_id=user_id, name=name, color_index=len(self.players))
             self.players[user_id] = player
         elif name:
             player.name = name
@@ -138,9 +138,7 @@ class Room:
         return self.turn_order[self.turn_index % len(self.turn_order)]
 
     def center_rank_set(self) -> set:
-        """Rank set of the current matchable combo (empty if last wasn't combo)."""
-        if not self.last_was_combo:
-            return set()
+        """Rank set currently showing in the centre (matchable by the next play)."""
         return {c.rank for c in self.center_throw}
 
     def card_objects(self, user_id: str, card_ids: List[str]) -> Optional[List]:
@@ -187,8 +185,11 @@ class Room:
             self.advance_turn()
         return owes_draw
 
-    def draw_one(self, user_id: str) -> bool:
-        """Take the owed draw, reshuffling if needed, then advance. True if reshuffled."""
+    def draw_one(self, user_id: str) -> dict:
+        """Take the owed draw, reshuffling if needed, then advance.
+
+        Returns {"card": Card|None, "reshuffled": bool}.
+        """
         reshuffled = False
         if not self.draw_pile and self.discard_pile:
             # Reshuffle the buried discards (the visible center stays on the table).
@@ -196,12 +197,14 @@ class Room:
             self.draw_pile = self.discard_pile
             self.discard_pile = []
             reshuffled = True
+        drawn = None
         if self.draw_pile:
-            self.players[user_id].hand.append(self.draw_pile.pop())
+            drawn = self.draw_pile.pop()
+            self.players[user_id].hand.append(drawn)
         # If both piles are empty there is nothing to draw; the turn still passes.
         self.awaiting_draw = False
         self.advance_turn()
-        return reshuffled
+        return {"card": drawn, "reshuffled": reshuffled}
 
     def advance_turn(self) -> None:
         """Move to the next player who can act (not safe, not eliminated)."""
@@ -364,17 +367,18 @@ class Room:
         player = self.players[user_id]
         player.timeout_count += 1
         removed = player.timeout_count >= self.settings["timeout_limit"]
+        drawn = None
 
         if removed:
             player.eliminated = True
             self.awaiting_draw = False
             self.advance_turn()
         elif self.awaiting_draw:
-            self.draw_one(user_id)
+            drawn = self.draw_one(user_id)["card"]
         elif player.hand:
             highest = max(player.hand, key=lambda c: c.value)
             self.apply_throw(user_id, [highest], ACTION_SINGLE)
-            self.draw_one(user_id)
+            drawn = self.draw_one(user_id)["card"]
         else:
             self.advance_turn()
 
@@ -385,7 +389,11 @@ class Room:
             self.winner = remaining[0] if remaining else None
             self.state = STATE_GAME_END
 
-        return {"removed": removed, "timeout_count": player.timeout_count}
+        return {
+            "removed": removed,
+            "timeout_count": player.timeout_count,
+            "drawn": drawn.id if drawn else None,
+        }
 
     def hand_for(self, user_id: str) -> List[dict]:
         """A single player's own cards — sent only to that player."""
@@ -394,6 +402,35 @@ class Room:
 
     def in_round(self) -> bool:
         return self.state == STATE_IN_TURN
+
+    def reset_for_rematch(self) -> None:
+        """Wipe scores/eliminations and return everyone to the lobby."""
+        for p in self.players.values():
+            p.hand = []
+            p.round_score = 0
+            p.total_score = 0
+            p.is_safe = False
+            p.eliminated = False
+            p.timeout_count = 0
+        self.state = STATE_LOBBY
+        self.round_number = 0
+        self.start_offset = 0
+        self.turn_order = []
+        self.turn_index = 0
+        self.draw_pile = []
+        self.discard_pile = []
+        self.center_throw = []
+        self.last_was_combo = False
+        self.awaiting_draw = False
+        self.turns_completed = 0
+        self.initial_active = 0
+        self.first_orbit_complete = False
+        self.last_caller = None
+        self.last_caught = False
+        self.newly_eliminated = []
+        self.game_over = False
+        self.winner = None
+        self._last_result = None
 
     # ---- host migration ----
     def migrate_host(self) -> Optional[str]:

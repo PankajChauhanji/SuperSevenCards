@@ -57,7 +57,6 @@ def register(socketio, manager):
 
         action = infer_action(
             [c.rank for c in cards],
-            room.last_was_combo,
             room.center_rank_set(),
         )
         if action is None:
@@ -92,10 +91,11 @@ def register(socketio, manager):
         if not room.awaiting_draw:
             return error("There's no draw to take right now.")
 
-        reshuffled = room.draw_one(user_id)
+        result = room.draw_one(user_id)
+        drawn_id = result["card"].id if result["card"] else None
 
-        emit("your_hand", {"cards": room.hand_for(user_id)})
-        if reshuffled:
+        emit("your_hand", {"cards": room.hand_for(user_id), "drawn": drawn_id})
+        if result["reshuffled"]:
             emit("deck_reshuffled", {}, to=room.code)
         if _auto_end_if_stuck(room):
             return

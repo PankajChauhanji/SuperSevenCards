@@ -143,3 +143,24 @@ def register(socketio, manager):
         # Each player privately receives only their own hand — never others'.
         for player in room.connected_players():
             emit("your_hand", {"cards": room.hand_for(player.user_id)}, to=player.sid)
+
+    @socketio.on("rematch")
+    def on_rematch(data):
+        data = data or {}
+        code = (data.get("code") or "").strip().upper()
+        user_id = data.get("user_id")
+        room = manager.get_room(code)
+        if room is None:
+            return error("This room no longer exists.")
+        if not room.is_host(user_id):
+            return error("Only the host can start a rematch.")
+        if room.state not in (STATE_ROUND_END, STATE_GAME_END):
+            return error("You can only rematch once a game has finished.")
+
+        room.reset_for_rematch()
+        emit(
+            "room_reset",
+            {"players": room.public_players(), "host_id": room.host_id,
+             "settings": room.settings},
+            to=code,
+        )
