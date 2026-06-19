@@ -4,6 +4,18 @@
 (function () {
   const CARD_PATH = "/static/img/cards/";
 
+  // Stable per-player identity colours (indexed by player.color).
+  const PALETTE = ["#4ea1ff", "#ff9f43", "#a98cf0", "#f06ea9", "#43c6c6", "#d6c04a"];
+  function colorOf(p) {
+    return PALETTE[(p && typeof p.color === "number" ? p.color : 0) % PALETTE.length];
+  }
+  function swatch(p) {
+    const s = document.createElement("span");
+    s.className = "swatch";
+    s.style.background = colorOf(p);
+    return s;
+  }
+
   function cardImg(card, className) {
     const img = document.createElement("img");
     img.className = "card " + (className || "");
@@ -32,13 +44,18 @@
   function renderScoreboard(state) {
     const list = document.getElementById("score-list");
     list.innerHTML = "";
-    state.players.forEach((p) => {
+    // Order by standing: lowest cumulative score leads; eliminated sink.
+    const ordered = state.players.slice().sort(
+      (a, b) => (a.eliminated - b.eliminated) || (a.score - b.score)
+    );
+    ordered.forEach((p) => {
       const li = document.createElement("li");
       if (p.user_id === state.currentTurn) li.classList.add("turn");
       if (p.eliminated) li.classList.add("out");
 
       const left = document.createElement("span");
       left.className = "sb-name";
+      left.appendChild(swatch(p));
       const dot = document.createElement("span");
       dot.className = "dot" + (p.connected ? " on" : "");
       left.appendChild(dot);
@@ -73,6 +90,7 @@
         const p = byId[uid];
         const seat = document.createElement("div");
         seat.className = "seat";
+        seat.style.setProperty("--seat-color", colorOf(p));
         if (p.user_id === state.currentTurn) seat.classList.add("active");
         if (!p.connected) seat.classList.add("offline");
         if (p.eliminated) seat.classList.add("out");
@@ -160,6 +178,7 @@
       const slot = document.createElement("div");
       slot.className = "card-slot";
       slot.dataset.id = card.id;
+      if (card.id === state.justDrawnId) slot.classList.add("just-drawn");
       slot.appendChild(cardImg(card, "hand-card"));
       const tick = document.createElement("span");
       tick.className = "tick";

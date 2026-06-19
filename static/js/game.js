@@ -23,8 +23,13 @@
     lastWasCombo: false,
     firstOrbitComplete: false,
     secondsLeft: null,
+    justDrawnId: null,
+    settings: null,
   };
   window.SS.view = view; // selection.js reads this live reference
+
+  let prevTurn = null;   // for the your-turn sound cue
+  let drawnTimer = null; // clears the just-drawn highlight
 
   const lobbyView = document.getElementById("lobby-view");
   const tableView = document.getElementById("table-view");
@@ -47,6 +52,7 @@
     view.hostId = data.host_id;
     view.state = data.state;
     view.players = data.players;
+    if (data.settings) view.settings = data.settings;
     sync();
   });
 
@@ -54,6 +60,21 @@
     view.hostId = data.host_id;
     view.players = data.players;
     sync();
+  });
+
+  socket.on("room_reset", (data) => {
+    view.state = "LOBBY";
+    view.hostId = data.host_id;
+    view.players = data.players;
+    if (data.settings) view.settings = data.settings;
+    view.hand = [];
+    view.justDrawnId = null;
+    view.secondsLeft = null;
+    prevTurn = null;
+    document.getElementById("roundend-modal").classList.remove("open");
+    syncTimer();
+    sync();
+    showToast("New game — back to the lobby");
   });
 
   socket.on("round_start", (data) => {
@@ -86,10 +107,26 @@
     view.lastWasCombo = !!data.last_was_combo;
     view.firstOrbitComplete = !!data.first_orbit_complete;
     if (typeof data.turn_seconds_left === "number") view.secondsLeft = data.turn_seconds_left;
+
+    // Sound cue when the turn becomes mine.
+    if (view.state === "IN_TURN" && view.currentTurn === youId && prevTurn !== youId) {
+      if (window.SS.sound) window.SS.sound.turnPing();
+    }
+    prevTurn = view.currentTurn;
   }
 
   socket.on("your_hand", (data) => {
     view.hand = data.cards || [];
+    if (data.drawn) {
+      view.justDrawnId = data.drawn;
+      clearTimeout(drawnTimer);
+      drawnTimer = setTimeout(() => {
+        view.justDrawnId = null;
+        if (view.state === "IN_TURN") Table.render(view);
+      }, 5000);
+    } else {
+      view.justDrawnId = null;
+    }
     if (window.Selection) window.Selection.reset();
     if (view.state === "IN_TURN") {
       Table.render(view);
@@ -173,17 +210,23 @@
   }
 
   // ---- lobby rendering ----
+  const LOBBY_PALETTE = ["#4ea1ff", "#ff9f43", "#a98cf0", "#f06ea9", "#43c6c6", "#d6c04a"];
+
   function renderLobby() {
     rosterEl.innerHTML = "";
     view.players.forEach((p) => {
       const li = document.createElement("li");
       const who = document.createElement("div");
       who.className = "who";
+      const sw = document.createElement("span");
+      sw.className = "swatch";
+      sw.style.background = LOBBY_PALETTE[(p.color || 0) % LOBBY_PALETTE.length];
       const dot = document.createElement("span");
       dot.className = "dot" + (p.connected ? " on" : "");
       const name = document.createElement("span");
       name.className = "name";
       name.textContent = p.name;
+      who.appendChild(sw);
       who.appendChild(dot);
       who.appendChild(name);
 
@@ -195,6 +238,8 @@
       li.appendChild(tags);
       rosterEl.appendChild(li);
     });
+
+    renderLobbySettings();
 
     const n = view.players.length;
     metaEl.textContent = n + (n === 1 ? " player" : " players") + " in the room";
@@ -215,6 +260,30 @@
       p.textContent = "Waiting for the host to start\u2026";
       startRow.appendChild(p);
     }
+  }
+
+  function renderLobbySettings() {
+    const el = document.getElementById("lobby-settings");
+    if (!el) return;
+    const s = view.settings;
+    if (!s) { el.innerHTML = ""; return; }
+    const items = [
+      ["Out at", s.max_score + " pts"],
+      ["Stop penalty", "+" + s.stop_penalty],
+      ["Win discount", "\u2212" + s.win_discount],
+      ["Turn timer", s.turn_timer + "s"],
+      ["Timeouts", s.timeout_limit],
+    ];
+    el.innerHTML = "<h3>Game settings</h3>";
+    const grid = document.createElement("div");
+    grid.className = "settings-readout";
+    items.forEach(([k, v]) => {
+      const row = document.createElement("div");
+      row.className = "sr-item";
+      row.innerHTML = "<span>" + k + "</span><strong>" + v + "</strong>";
+      grid.appendChild(row);
+    });
+    el.appendChild(grid);
   }
 
   function makeBadge(text, kind) {
@@ -364,11 +433,30 @@
 
     const footer = document.getElementById("roundend-footer");
     footer.innerHTML = "";
-    const btn = document.createElement("button");
-    btn.className = "btn-primary";
-    btn.textContent = "Back to home";
-    btn.addEventListener("click", () => { window.location.href = "/"; });
-    footer.appendChild(btn);
+
+    if (youId === view.hostId) {
+      const again = document.createElement("button");
+      again.className = "btn-primary";
+      again.textContent = "Play again";
+      again.addEventListener("click", () => {
+        again.disabled = true;
+        socket.emit("rematch", { code, user_id: youId });
+      });
+      footer.appendChild(again);
+    } else {
+      const wait = document.createElement("span");
+      wait.className = "waiting";
+      wait.style.marginRight = "auto";
+      wait.textContent = "Waiting for the host to start a rematch\u2026";
+      footer.appendChild(wait);
+    }
+
+    const home = document.createElement("button");
+    home.className = "btn-ghost";
+    home.style.width = "auto";
+    home.textContent = "Back to home";
+    home.addEventListener("click", () => { window.location.href = "/"; });
+    footer.appendChild(home);
 
     modal.classList.add("open");
   }
@@ -385,6 +473,17 @@
   modal.addEventListener("click", (e) => {
     if (e.target === modal) modal.classList.remove("open");
   });
+
+  // ---- mute toggle ----
+  const muteBtn = document.getElementById("mute-btn");
+  if (muteBtn && window.SS.sound) {
+    const paint = () => { muteBtn.textContent = window.SS.sound.muted() ? "\uD83D\uDD07" : "\uD83D\uDD0A"; };
+    paint();
+    muteBtn.addEventListener("click", () => {
+      window.SS.sound.toggleMute();
+      paint();
+    });
+  }
 
   // ---- copy code ----
   const copyBtn = document.getElementById("copy-btn");

@@ -648,38 +648,53 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* game-over rows reuse .re-row; winner uses .caller highlight, out uses .out */
 .re-row.out { opacity: 0.5; }
 
-/* ---------- footer ---------- */
-.site-footer {
-  border-top: 1px solid var(--line);
-  padding: 1rem 1.25rem 0.6rem;
-  text-align: center;
-  background: var(--bg-2);
+/* ---------- enhancements ---------- */
+/* player colour swatch */
+.swatch {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  margin-right: 0.1rem;
+  flex: 0 0 auto;
 }
-.footer-links {
-  display: inline-flex;
-  align-items: center;
-  gap: 1.25rem;
-  margin-bottom: 0.5rem;
+
+/* coloured accent stripe on opponent seats */
+.seat { border-left: 4px solid var(--seat-color, var(--line)); }
+
+/* just-drawn card highlight (clears after ~5s) */
+.card-slot.just-drawn .hand-card {
+  outline: 3px solid var(--gold);
+  outline-offset: 1px;
+  animation: drawnpulse 1s ease-in-out 0s 3;
 }
-.footer-links a {
+@keyframes drawnpulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(230,178,60,0.0); }
+  50% { box-shadow: 0 0 0 6px rgba(230,178,60,0.35); }
+}
+
+/* lobby settings readout */
+.lobby-settings { margin-bottom: 1.25rem; }
+.lobby-settings h3 {
+  font-family: var(--display);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--muted);
-  text-decoration: none;
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
-  transition: color 0.15s ease;
+  margin: 0 0 0.6rem;
 }
-.footer-links a:hover { color: var(--gold); }
-.footer-copy { color: var(--muted); font-size: 0.75rem; margin-bottom: 0.5rem; }
-.footer-star {
-  font-size: 0.82rem;
-  color: var(--muted);
-  margin: 0;
+.settings-readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
 }
-.footer-star a {
-  color: var(--gold);
-  text-decoration: none;
-  font-weight: 600;
-  border-bottom: 1px dashed rgba(230,178,60,0.4);
-  padding-bottom: 1px;
+.sr-item {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
-.footer-star a:hover { border-bottom-color: var(--gold); }
+.sr-item span { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.sr-item strong { font-family: var(--display); color: var(--text); }

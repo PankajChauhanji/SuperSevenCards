@@ -10,7 +10,7 @@
   }
 
   // ---- client-side mirror of game/rules.py (for the live label only) ----
-  function infer(cards, lastWasCombo, centerRanks) {
+  function infer(cards, centerRanks) {
     const ranks = cards.map((c) => c.rank).sort((a, b) => a - b);
     const n = ranks.length;
     if (n === 0) return null;
@@ -23,14 +23,16 @@
       for (let i = 1; i < n; i++) if (ranks[i] !== ranks[i - 1] + 1) consecutive = false;
       if (distinct && consecutive) return "sequence";
     }
-    if (lastWasCombo && centerRanks && cards.every((c) => centerRanks.has(c.rank))) return "match";
+    if (n === 2 && allSame) return "pair";
+    if (centerRanks && centerRanks.size && cards.every((c) => centerRanks.has(c.rank))) return "match";
     return null;
   }
 
   const LABELS = {
     single: "Discard 1 \u00b7 draw 1",
-    set: "Set \u2713 \u00b7 no draw",
-    sequence: "Sequence \u2713 \u00b7 no draw",
+    pair: "Pair \u00b7 draw 1",
+    set: "Set \u00b7 no draw",
+    sequence: "Sequence \u00b7 no draw",
     match: "Match \u00b7 draw 1",
   };
 
@@ -101,7 +103,7 @@
       return;
     }
     const centerRanks = new Set((v.center || []).map((c) => c.rank));
-    const action = infer(cards, v.lastWasCombo, centerRanks);
+    const action = infer(cards, centerRanks);
     if (action) {
       label.textContent = LABELS[action];
       label.className = "play-label ok";
