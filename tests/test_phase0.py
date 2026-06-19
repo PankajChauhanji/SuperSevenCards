@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """End-to-end Phase 0 test: two socket clients run the full lobby flow."""
 import time
 import socketio

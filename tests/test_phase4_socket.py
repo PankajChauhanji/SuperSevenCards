@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """Phase 4 socket test: round_end fields and the next-round loop."""
 import time, socketio
 

@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """Phase 3 engine tests: first-orbit gating and round-end scoring (no sockets)."""
 from game.room import Room, STATE_IN_TURN, STATE_ROUND_END
 from game.cards import Card
@@ -27,7 +29,7 @@ def make_room(hands, draw_pile=None, safe=()):
 
 def throw(room, uid, ids):
     cards = room.card_objects(uid, ids)
-    action = infer_action([c.rank for c in cards], room.last_was_combo, room.center_rank_set())
+    action = infer_action([c.rank for c in cards], room.center_rank_set())
     return room.apply_throw(uid, cards, action)
 
 

@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """Unit tests for game/scoring.py — no server needed."""
 from game.cards import Card
 from game.scoring import hand_total, score_round
