@@ -15,6 +15,7 @@
     <div class="topbar-right">
       <span class="turn-timer" id="turn-timer" style="display:none"></span>
       <span class="round-chip" id="round-chip" style="display:none">Round 1</span>
+      <button class="icon-btn" id="mute-btn" title="Sound on/off" aria-label="Sound on/off">&#128266;</button>
       <button class="icon-btn" id="rules-btn" title="Game rules" aria-label="Game rules">?</button>
     </div>
   </div>
@@ -28,6 +29,7 @@
     </div>
 
     <ul class="roster" id="roster"></ul>
+    <div class="lobby-settings" id="lobby-settings"></div>
     <p class="meta" id="lobby-meta">Connecting…</p>
     <div class="start-row" id="start-row"></div>
   </main>
@@ -105,7 +107,7 @@
       <div class="close-row" id="roundend-footer"></div>
     </div>
   </div>
-
+  
   <footer class="site-footer">
     <div class="footer-links">
       <a href="https://github.com/PankajChauhanji/SuperSevenCards" target="_blank" rel="noreferrer">GitHub</a>
@@ -122,6 +124,7 @@
   <script src="{{ url_for('static', filename='js/vendor/socket.io.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/identity.js') }}"></script>
   <script src="{{ url_for('static', filename='js/socket.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sound.js') }}"></script>
   <script src="{{ url_for('static', filename='js/table.js') }}"></script>
   <script src="{{ url_for('static', filename='js/selection.js') }}"></script>
   <script src="{{ url_for('static', filename='js/game.js') }}"></script>
