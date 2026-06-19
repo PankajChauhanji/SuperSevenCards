@@ -21,6 +21,7 @@
     roundNumber: 0,
     awaitingDraw: false,
     lastWasCombo: false,
+    firstOrbitComplete: false,
   };
   window.SS.view = view; // selection.js reads this live reference
 
@@ -70,6 +71,7 @@
   });
 
   function applyTable(data) {
+    if (data.state) view.state = data.state;
     view.players = data.players;
     view.currentTurn = data.current_turn;
     view.turnOrder = data.turn_order;
@@ -78,6 +80,7 @@
     view.roundNumber = data.round_number;
     view.awaitingDraw = !!data.awaiting_draw;
     view.lastWasCombo = !!data.last_was_combo;
+    view.firstOrbitComplete = !!data.first_orbit_complete;
   }
 
   socket.on("your_hand", (data) => {
@@ -102,6 +105,15 @@
   });
 
   socket.on("deck_reshuffled", () => showToast("Deck reshuffled"));
+
+  socket.on("round_end", (data) => {
+    view.state = "ROUND_END";
+    if (data.players) view.players = data.players;
+    // Keep the table visible underneath; refresh scoreboard totals.
+    if (tableView.style.display !== "none") Table.render(view);
+    if (window.Selection) window.Selection.refresh();
+    showRoundEnd(data);
+  });
 
   // ---- view switching ----
   function sync() {
@@ -168,6 +180,78 @@
     return b;
   }
 
+  // ---- round-end reveal ----
+  function showRoundEnd(data) {
+    const modal = document.getElementById("roundend-modal");
+    const title = document.getElementById("roundend-title");
+    const sub = document.getElementById("roundend-sub");
+    const body = document.getElementById("roundend-body");
+
+    const byId = {};
+    view.players.forEach((p) => (byId[p.user_id] = p));
+    const callerName = data.caller ? (byId[data.caller] || {}).name || "Someone" : null;
+
+    if (!data.caller) {
+      title.textContent = "Round over";
+      sub.textContent = "Everyone emptied their hand.";
+    } else if (data.caught) {
+      title.textContent = callerName + " got caught";
+      sub.textContent = "Someone matched or beat the call — penalty applied.";
+    } else {
+      title.textContent = callerName + " called it";
+      sub.textContent = "Lowest at the table — the call paid off.";
+    }
+
+    // Lowest round score first.
+    const rows = data.results.slice().sort((a, b) => a.round_score - b.round_score);
+    body.innerHTML = "";
+    rows.forEach((r) => {
+      const row = document.createElement("div");
+      row.className = "re-row";
+      if (r.user_id === data.caller) row.classList.add("caller");
+
+      const head = document.createElement("div");
+      head.className = "re-head";
+      const name = document.createElement("span");
+      name.className = "re-name";
+      name.textContent = r.name;
+      if (r.user_id === data.caller) name.appendChild(makeBadge("Caller", "host"));
+      if (r.is_safe) name.appendChild(makeBadge("Safe", "safe"));
+      const score = document.createElement("span");
+      score.className = "re-score";
+      score.textContent = "+" + r.round_score + "  \u2192  " + r.total_score;
+      head.appendChild(name);
+      head.appendChild(score);
+
+      const cards = document.createElement("div");
+      cards.className = "re-cards";
+      if (r.hand.length === 0) {
+        const none = document.createElement("span");
+        none.className = "re-empty";
+        none.textContent = "empty hand";
+        cards.appendChild(none);
+      } else {
+        r.hand.forEach((c) => {
+          const img = document.createElement("img");
+          img.className = "card re-card";
+          img.src = "/static/img/cards/" + c.id + ".svg";
+          img.alt = c.code + c.suit;
+          cards.appendChild(img);
+        });
+        const tot = document.createElement("span");
+        tot.className = "re-total";
+        tot.textContent = r.hand_total + " pts";
+        cards.appendChild(tot);
+      }
+
+      row.appendChild(head);
+      row.appendChild(cards);
+      body.appendChild(row);
+    });
+
+    modal.classList.add("open");
+  }
+
   // ---- selection / actions ----
   if (window.Selection) {
     window.Selection.init({ socket, code, you: youId });
@@ -180,6 +264,10 @@
   modal.addEventListener("click", (e) => {
     if (e.target === modal) modal.classList.remove("open");
   });
+
+  // ---- round-end modal ----
+  const reModal = document.getElementById("roundend-modal");
+  document.getElementById("roundend-close").addEventListener("click", () => reModal.classList.remove("open"));
 
   // ---- copy code ----
   const copyBtn = document.getElementById("copy-btn");

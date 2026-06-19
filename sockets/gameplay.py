@@ -34,6 +34,14 @@ def register(socketio, manager):
             return None, None
         return room, user_id
 
+    def _auto_end_if_stuck(room):
+        """End the round automatically if no one can act (everyone safe)."""
+        if room.state == STATE_IN_TURN and room.active_count() == 0:
+            result = room.end_round(None)
+            emit("round_end", room.round_end_payload(result), to=room.code)
+            return True
+        return False
+
     @socketio.on("play_cards")
     def on_play(data):
         room, user_id = _resolve(data)
@@ -70,6 +78,9 @@ def register(socketio, manager):
         )
         # The thrower's hand changed — send it privately.
         emit("your_hand", {"cards": room.hand_for(user_id)})
+        # If that throw left nobody able to act, the round auto-ends.
+        if _auto_end_if_stuck(room):
+            return
         # Authoritative snapshot for everyone.
         emit("table_state", room.public_round_state(), to=room.code)
 
@@ -86,4 +97,21 @@ def register(socketio, manager):
         emit("your_hand", {"cards": room.hand_for(user_id)})
         if reshuffled:
             emit("deck_reshuffled", {}, to=room.code)
+        if _auto_end_if_stuck(room):
+            return
         emit("table_state", room.public_round_state(), to=room.code)
+
+    @socketio.on("call_stop")
+    def on_stop(data):
+        room, user_id = _resolve(data)
+        if room is None:
+            return
+        if room.awaiting_draw:
+            return error("Finish your draw first.")
+        if not room.first_orbit_complete:
+            return error("Stop can't be called during the first orbit.")
+        if room.players[user_id].is_safe:
+            return error("You're already safe — no need to call Stop.")
+
+        result = room.end_round(user_id)
+        emit("round_end", room.round_end_payload(result), to=room.code)

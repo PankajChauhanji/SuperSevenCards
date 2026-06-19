@@ -28,7 +28,7 @@ def _pl(data):
     host_state["players"] = data["players"]
     host_state["host_id"] = data["host_id"]
 
-@host.on("game_started")
+@host.on("round_start")
 def _gs(_):
     host_state["started"] = True
 
@@ -53,7 +53,7 @@ def _jrj(data):
 def _jpl(data):
     join_state["players"] = data["players"]
 
-@joiner.on("game_started")
+@joiner.on("round_start")
 def _jgs(_):
     join_state["started"] = True
 
@@ -101,11 +101,11 @@ log(join_state.get("error") == "Only the host can start the game.",
     "non-host start is rejected")
 log(not host_state.get("started"), "game not started by non-host")
 
-# 6. Host starts -> both clients receive game_started.
+# 6. Host starts -> the round is dealt; both clients receive round_start.
 host.emit("start_game", {"code": code, "user_id": "host-1"})
 time.sleep(0.4)
-log(host_state.get("started") is True, "host receives game_started")
-log(join_state.get("started") is True, "joiner receives game_started")
+log(host_state.get("started") is True, "host receives round_start on game start")
+log(join_state.get("started") is True, "joiner receives round_start on game start")
 
 # 7. Joining an unknown room errors cleanly.
 joiner.emit("join_room", {"code": "QQQQ", "name": "X", "user_id": "ghost"})

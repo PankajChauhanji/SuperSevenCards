@@ -18,6 +18,7 @@ from game.rules import DRAW_ACTIONS, COMBO_ACTIONS
 # are wired in later phases; Phase 1 deals into IN_TURN and renders.
 STATE_LOBBY = "LOBBY"
 STATE_IN_TURN = "IN_TURN"
+STATE_ROUND_END = "ROUND_END"
 
 
 class Room:
@@ -38,6 +39,11 @@ class Room:
         self.turn_order: List[str] = []   # active user_ids, seating order
         self.turn_index = 0
         self.awaiting_draw = False        # current player owes a draw
+        self.turns_completed = 0          # completed turns this round
+        self.initial_active = 0           # players dealt in this round
+        self.first_orbit_complete = False # gates calling Stop
+        self.last_caller = None           # who called Stop last round
+        self.last_caught = False
 
     # ---- registration / attachment ----
     def register_player(self, user_id: str, name: str) -> Player:
@@ -111,6 +117,11 @@ class Room:
         self.turn_order = active
         self.turn_index = 0
         self.awaiting_draw = False
+        self.turns_completed = 0
+        self.initial_active = len(active)
+        self.first_orbit_complete = False
+        self.last_caller = None
+        self.last_caught = False
         self.round_number += 1
         self.state = STATE_IN_TURN
 
@@ -190,12 +201,24 @@ class Room:
         n = len(self.turn_order)
         if n == 0:
             return
+        # One turn has just completed.
+        self.turns_completed += 1
+        if self.turns_completed >= self.initial_active:
+            self.first_orbit_complete = True
         for _ in range(n):
             self.turn_index = (self.turn_index + 1) % n
             player = self.players.get(self.turn_order[self.turn_index])
             if player and not player.is_safe and not player.eliminated:
                 return
-        # No eligible player remains — round-end handling arrives in Phase 3.
+        # No eligible player remains — the caller-less auto-end is handled
+        # by the gameplay layer via active_count().
+
+    def active_count(self) -> int:
+        """Players still holding cards who can take a turn."""
+        return sum(
+            1 for uid in self.turn_order
+            if not self.players[uid].is_safe and not self.players[uid].eliminated
+        )
 
     def public_round_state(self) -> dict:
         """Common, privacy-safe snapshot shared by every player (no hands)."""
@@ -204,10 +227,53 @@ class Room:
             "round_number": self.round_number,
             "current_turn": self.current_turn_id(),
             "awaiting_draw": self.awaiting_draw,
+            "first_orbit_complete": self.first_orbit_complete,
             "turn_order": list(self.turn_order),
             "deck_count": len(self.draw_pile),
             "center": [c.to_dict() for c in self.center_throw],
             "last_was_combo": self.last_was_combo,
+            "players": self.public_players(),
+        }
+
+    # ---- round end / scoring ----
+    def end_round(self, caller_id: Optional[str]) -> dict:
+        """Score the round, apply totals, transition to ROUND_END."""
+        from game.scoring import score_round
+
+        participants = [
+            (uid, self.players[uid].hand, self.players[uid].is_safe)
+            for uid in self.turn_order
+        ]
+        result = score_round(participants, caller_id, self.settings)
+        for uid, pts in result["scores"].items():
+            self.players[uid].round_score = pts
+            self.players[uid].total_score += pts
+
+        self.last_caller = caller_id
+        self.last_caught = result["caught"]
+        self.awaiting_draw = False
+        self.state = STATE_ROUND_END
+        self._last_result = result
+        return result
+
+    def round_end_payload(self, result: dict) -> dict:
+        """Full reveal — hands are public now that the round is over."""
+        rows = []
+        for uid in self.turn_order:
+            player = self.players[uid]
+            rows.append({
+                "user_id": uid,
+                "name": player.name,
+                "hand": [c.to_dict() for c in player.hand],
+                "hand_total": result["totals"][uid],
+                "round_score": player.round_score,
+                "total_score": player.total_score,
+                "is_safe": player.is_safe,
+            })
+        return {
+            "caller": self.last_caller,
+            "caught": self.last_caught,
+            "results": rows,
             "players": self.public_players(),
         }
 

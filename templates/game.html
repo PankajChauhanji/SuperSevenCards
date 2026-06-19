@@ -59,7 +59,7 @@
           <span class="play-label" id="play-label"></span>
           <div class="action-btns">
             <button class="btn-throw" id="throw-btn" disabled>Throw</button>
-            <button class="btn-stop" id="stop-btn" disabled title="Calling Stop arrives in the next build">Stop</button>
+            <button class="btn-stop" id="stop-btn" disabled title="Call Stop at the start of your turn">Stop</button>
           </div>
         </div>
       </div>
@@ -91,6 +91,18 @@
 
       <div class="close-row">
         <button class="btn-primary" id="rules-close">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Round-end reveal -->
+  <div class="modal-backdrop" id="roundend-modal">
+    <div class="modal roundend" role="dialog" aria-modal="true" aria-label="Round results">
+      <h2 id="roundend-title">Round over</h2>
+      <p id="roundend-sub" class="re-sub"></p>
+      <div id="roundend-body"></div>
+      <div class="close-row">
+        <button class="btn-primary" id="roundend-close">Done</button>
       </div>
     </div>
   </div>

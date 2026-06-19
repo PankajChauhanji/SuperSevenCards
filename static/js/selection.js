@@ -48,19 +48,38 @@
     refresh();
   }
 
+  function meRow() {
+    return (view().players || []).find((p) => p.user_id === view().you);
+  }
+
   function refresh() {
     const v = view();
+    const label = document.getElementById("play-label");
+    const throwBtn = document.getElementById("throw-btn");
+    const stopBtn = document.getElementById("stop-btn");
+    if (!label || !throwBtn || !stopBtn) return;
+
+    const inTurn = v.state === "IN_TURN";
+    const mine = inTurn && myTurn();
+    const me = meRow();
+    const iAmSafe = !!(me && me.is_safe);
+
     // Re-apply selected styling to whatever slots are in the DOM.
     document.querySelectorAll("#hand .card-slot").forEach((slot) => {
       slot.classList.toggle("selected", selected.has(slot.dataset.id));
-      slot.classList.toggle("locked", !myTurn() || v.awaitingDraw);
+      slot.classList.toggle("locked", !mine || v.awaitingDraw);
     });
 
-    const label = document.getElementById("play-label");
-    const throwBtn = document.getElementById("throw-btn");
-    if (!label || !throwBtn) return;
+    // Stop: only at the clean start of your turn, after the first orbit,
+    // and never when you're already safe.
+    stopBtn.disabled = !(mine && !v.awaitingDraw && v.firstOrbitComplete && !iAmSafe);
 
-    if (!myTurn()) {
+    if (!inTurn) {
+      label.textContent = "";
+      throwBtn.disabled = true;
+      return;
+    }
+    if (!mine) {
       const them = (v.players || []).find((p) => p.user_id === v.currentTurn);
       label.textContent = them ? "Waiting for " + them.name + "\u2026" : "Waiting\u2026";
       label.className = "play-label muted";
@@ -95,14 +114,14 @@
   }
 
   function toggle(id) {
-    if (!myTurn() || view().awaitingDraw) return;
+    if (view().state !== "IN_TURN" || !myTurn() || view().awaitingDraw) return;
     if (selected.has(id)) selected.delete(id);
     else selected.add(id);
     refresh();
   }
 
   function doThrow() {
-    if (!myTurn() || view().awaitingDraw) return;
+    if (view().state !== "IN_TURN" || !myTurn() || view().awaitingDraw) return;
     const ids = [...selected];
     if (!ids.length) return;
     socket.emit("play_cards", { code, user_id: you, card_ids: ids });
@@ -110,8 +129,17 @@
   }
 
   function doDraw() {
-    if (myTurn() && view().awaitingDraw) {
+    if (view().state === "IN_TURN" && myTurn() && view().awaitingDraw) {
       socket.emit("draw_card", { code, user_id: you });
+    }
+  }
+
+  function doStop() {
+    const v = view();
+    const me = meRow();
+    if (v.state === "IN_TURN" && myTurn() && !v.awaitingDraw &&
+        v.firstOrbitComplete && !(me && me.is_safe)) {
+      socket.emit("call_stop", { code, user_id: you });
     }
   }
 
@@ -127,7 +155,7 @@
       });
       document.getElementById("deck").addEventListener("click", doDraw);
       document.getElementById("throw-btn").addEventListener("click", doThrow);
-      // Stop is wired in Phase 3.
+      document.getElementById("stop-btn").addEventListener("click", doStop);
     },
     refresh,
     reset,
