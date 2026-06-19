@@ -3,13 +3,14 @@
 Real-time multiplayer card game (Flask-SocketIO + vanilla JS). Shed your hand,
 call **Stop** when you think you're lowest, survive the elimination cap.
 
-**Build status:** Phase 3 — Endgame. Calling Stop (only at the clean start of
-your turn, and never during the first orbit), the round-end reveal of every
-hand, and full scoring: a strictly-lowest caller scores `max(total - 5, 0)`, a
-caught caller takes `hand + 40`, others score their hand, and a safe (0-card)
-player scores 0 — so once anyone is safe, Stop is a guaranteed penalty. Totals
-accumulate across the round. The multi-round elimination loop and the turn
-timer arrive in Phase 4.
+**Build status:** Complete (Phases 0–4). Full game: lobby, dealing, turn play
+(single / set / sequence / match), drawing, Stop with first-orbit gating,
+round scoring with the win discount and caught penalty, the safe/trap rule,
+multi-round play with a rotating starting drawer, elimination at the score cap
+with a survivor tiebreaker, last-player-standing game end, a 40-second turn
+timer that auto-plays and removes a player after three timeouts, reconnection
+at any stage, and host migration. Your own hand is shown sorted by rank then
+suit.
 
 ## Run locally
 
@@ -60,6 +61,7 @@ python test_rules.py            # pure rules engine (no server needed)
 python test_scoring.py          # round scoring: win / caught / trap (no server)
 python test_phase2_engine.py    # room turn logic, deterministic (no server)
 python test_phase3_engine.py    # first-orbit gating + round-end (no server)
+python test_phase4.py           # rotation, elimination, tiebreaker, timeout, director (no server)
 ```
 
 With the server running on `PORT=5005`:
@@ -69,4 +71,5 @@ python test_phase0.py           # lobby: create/join/start, reconnect, host migr
 python test_phase1.py           # deal correctness, privacy, mid-round reconnect
 python test_phase2_socket.py    # play/draw flow and rejections over the wire
 python test_phase3_socket.py    # Stop gating and round-end reveal over the wire
+python test_phase4_socket.py    # next-round loop and round_end game fields
 ```

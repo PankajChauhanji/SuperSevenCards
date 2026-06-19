@@ -144,10 +144,19 @@
     seat.appendChild(tag);
   }
 
+  // Stable display order for a hand: by rank, then by suit.
+  const SUIT_ORDER = { S: 0, H: 1, D: 2, C: 3 };
+  function sortedHand(cards) {
+    return (cards || []).slice().sort((a, b) => {
+      if (a.rank !== b.rank) return a.rank - b.rank;
+      return (SUIT_ORDER[a.suit] || 0) - (SUIT_ORDER[b.suit] || 0);
+    });
+  }
+
   function renderHand(state) {
     const hand = document.getElementById("hand");
     hand.innerHTML = "";
-    (state.hand || []).forEach((card) => {
+    sortedHand(state.hand).forEach((card) => {
       const slot = document.createElement("div");
       slot.className = "card-slot";
       slot.dataset.id = card.id;

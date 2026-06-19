@@ -10,7 +10,7 @@ call_stop and the turn timer arrive in later phases.
 """
 from flask_socketio import emit
 
-from game.room import STATE_IN_TURN
+from game.room import STATE_IN_TURN, STATE_ROUND_END
 from game.rules import infer_action
 from sockets.common import error
 
@@ -115,3 +115,23 @@ def register(socketio, manager):
 
         result = room.end_round(user_id)
         emit("round_end", room.round_end_payload(result), to=room.code)
+
+    @socketio.on("next_round")
+    def on_next_round(data):
+        data = data or {}
+        code = (data.get("code") or "").strip().upper()
+        user_id = data.get("user_id")
+        room = manager.get_room(code)
+        if room is None:
+            return error("This room no longer exists.")
+        if not room.is_host(user_id):
+            return error("Only the host can start the next round.")
+        if room.state != STATE_ROUND_END:
+            return error("There's no round to advance.")
+
+        room.start_round()
+        emit("round_start", room.public_round_state(), to=room.code)
+        # Deal hands privately; eliminated players receive an empty hand so
+        # their old cards clear and they continue as spectators.
+        for player in room.connected_players():
+            emit("your_hand", {"cards": room.hand_for(player.user_id)}, to=player.sid)

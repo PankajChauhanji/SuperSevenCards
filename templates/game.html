@@ -13,6 +13,7 @@
   <div class="topbar">
     <div class="wordmark">SUPER <span class="seven">SEVEN</span></div>
     <div class="topbar-right">
+      <span class="turn-timer" id="turn-timer" style="display:none"></span>
       <span class="round-chip" id="round-chip" style="display:none">Round 1</span>
       <button class="icon-btn" id="rules-btn" title="Game rules" aria-label="Game rules">?</button>
     </div>
@@ -101,9 +102,7 @@
       <h2 id="roundend-title">Round over</h2>
       <p id="roundend-sub" class="re-sub"></p>
       <div id="roundend-body"></div>
-      <div class="close-row">
-        <button class="btn-primary" id="roundend-close">Done</button>
-      </div>
+      <div class="close-row" id="roundend-footer"></div>
     </div>
   </div>
 

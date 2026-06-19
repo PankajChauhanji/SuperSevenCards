@@ -629,3 +629,21 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .re-card { width: 38px; height: 53px; border-radius: 4px; }
 .re-total { color: var(--muted); font-size: 0.82rem; margin-left: 0.4rem; }
 .re-empty { color: var(--turn); font-size: 0.85rem; font-weight: 600; }
+
+/* ---------- turn timer ---------- */
+.turn-timer {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--turn);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  min-width: 3.2rem;
+  text-align: center;
+}
+.turn-timer.low { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+/* game-over rows reuse .re-row; winner uses .caller highlight, out uses .out */
+.re-row.out { opacity: 0.5; }

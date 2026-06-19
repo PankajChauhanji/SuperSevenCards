@@ -13,7 +13,7 @@ from flask import request
 from flask_socketio import join_room as sio_join, emit
 
 from config import DEFAULT_SETTINGS, SETTINGS_BOUNDS, MIN_PLAYERS
-from game.room import STATE_LOBBY, STATE_ROUND_END
+from game.room import STATE_LOBBY, STATE_ROUND_END, STATE_GAME_END
 from sockets.common import bind_sid, error
 
 NAME_MAX = 20
@@ -113,12 +113,14 @@ def register(socketio, manager):
             to=code,
         )
 
-        # Reconnecting mid-round: resend this player's view of the table.
+        # Reconnecting mid-game: resend the appropriate view.
         if room.in_round():
             emit("round_start", room.public_round_state())
             emit("your_hand", {"cards": room.hand_for(user_id)})
         elif room.state == STATE_ROUND_END and getattr(room, "_last_result", None):
             emit("round_end", room.round_end_payload(room._last_result))
+        elif room.state == STATE_GAME_END:
+            emit("game_end", room.game_end_payload())
 
     @socketio.on("start_game")
     def on_start(data):

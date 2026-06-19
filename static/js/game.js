@@ -22,6 +22,7 @@
     awaitingDraw: false,
     lastWasCombo: false,
     firstOrbitComplete: false,
+    secondsLeft: null,
   };
   window.SS.view = view; // selection.js reads this live reference
 
@@ -58,8 +59,10 @@
   socket.on("round_start", (data) => {
     view.state = "IN_TURN";
     applyTable(data);
+    document.getElementById("roundend-modal").classList.remove("open");
     if (window.Selection) window.Selection.reset();
     sync();
+    syncTimer();
   });
 
   socket.on("table_state", (data) => {
@@ -68,6 +71,7 @@
       Table.render(view);
       if (window.Selection) window.Selection.refresh();
     }
+    syncTimer();
   });
 
   function applyTable(data) {
@@ -81,6 +85,7 @@
     view.awaitingDraw = !!data.awaiting_draw;
     view.lastWasCombo = !!data.last_was_combo;
     view.firstOrbitComplete = !!data.first_orbit_complete;
+    if (typeof data.turn_seconds_left === "number") view.secondsLeft = data.turn_seconds_left;
   }
 
   socket.on("your_hand", (data) => {
@@ -106,14 +111,54 @@
 
   socket.on("deck_reshuffled", () => showToast("Deck reshuffled"));
 
+  socket.on("player_timed_out", (data) => {
+    if (data.removed) return; // an elimination toast follows
+    showToast(data.name + " ran out of time");
+  });
+
+  socket.on("player_eliminated", (data) => {
+    showToast(data.name + " is out of the game");
+  });
+
   socket.on("round_end", (data) => {
     view.state = "ROUND_END";
+    view.secondsLeft = null;
     if (data.players) view.players = data.players;
-    // Keep the table visible underneath; refresh scoreboard totals.
     if (tableView.style.display !== "none") Table.render(view);
     if (window.Selection) window.Selection.refresh();
-    showRoundEnd(data);
+    syncTimer();
+    if (data.game_over) {
+      showGameOver(data.winner, gameOverRows(data.results));
+    } else {
+      showRoundEnd(data);
+    }
   });
+
+  socket.on("game_end", (data) => {
+    view.state = "GAME_END";
+    view.secondsLeft = null;
+    if (data.players) view.players = data.players;
+    syncTimer();
+    showGameOver(data.winner, data.standings);
+  });
+
+  // ---- turn timer countdown ----
+  function syncTimer() {
+    const el = document.getElementById("turn-timer");
+    if (view.state !== "IN_TURN" || view.secondsLeft == null) {
+      el.style.display = "none";
+      return;
+    }
+    el.style.display = "inline-block";
+    el.textContent = "\u23f1 " + Math.max(0, view.secondsLeft) + "s";
+    el.classList.toggle("low", view.secondsLeft <= 10);
+  }
+  setInterval(() => {
+    if (view.state === "IN_TURN" && typeof view.secondsLeft === "number" && view.secondsLeft > 0) {
+      view.secondsLeft -= 1;
+      syncTimer();
+    }
+  }, 1000);
 
   // ---- view switching ----
   function sync() {
@@ -249,6 +294,82 @@
       body.appendChild(row);
     });
 
+    // Footer: host advances the game; others wait.
+    const footer = document.getElementById("roundend-footer");
+    footer.innerHTML = "";
+    if (youId === view.hostId) {
+      const btn = document.createElement("button");
+      btn.className = "btn-primary";
+      btn.textContent = "Next round";
+      btn.addEventListener("click", () => {
+        btn.disabled = true;
+        socket.emit("next_round", { code, user_id: youId });
+      });
+      footer.appendChild(btn);
+    } else {
+      const wait = document.createElement("p");
+      wait.className = "waiting";
+      wait.style.margin = "0";
+      wait.textContent = "Waiting for the host to deal the next round\u2026";
+      footer.appendChild(wait);
+    }
+
+    modal.classList.add("open");
+  }
+
+  // Build standings rows from a round_end results array (for a game-over reveal).
+  function gameOverRows(resultRows) {
+    return resultRows
+      .map((r) => ({
+        user_id: r.user_id, name: r.name,
+        total_score: r.total_score, eliminated: r.eliminated,
+      }))
+      .sort((a, b) => (a.eliminated - b.eliminated) || (a.total_score - b.total_score));
+  }
+
+  function showGameOver(winnerId, rows) {
+    const modal = document.getElementById("roundend-modal");
+    const title = document.getElementById("roundend-title");
+    const sub = document.getElementById("roundend-sub");
+    const body = document.getElementById("roundend-body");
+
+    const winnerName = (rows.find((r) => r.user_id === winnerId) || {}).name || "Nobody";
+    title.textContent = winnerName + " wins!";
+    sub.textContent = winnerId === youId
+      ? "You're the last one standing."
+      : "Last player standing takes the game.";
+
+    body.innerHTML = "";
+    rows.forEach((r, i) => {
+      const row = document.createElement("div");
+      row.className = "re-row";
+      if (r.user_id === winnerId) row.classList.add("caller");
+      if (r.eliminated) row.classList.add("out");
+
+      const head = document.createElement("div");
+      head.className = "re-head";
+      const name = document.createElement("span");
+      name.className = "re-name";
+      name.textContent = (i + 1) + ". " + r.name;
+      if (r.user_id === winnerId) name.appendChild(makeBadge("Winner", "host"));
+      if (r.eliminated) name.appendChild(makeBadge("Out", "you"));
+      const score = document.createElement("span");
+      score.className = "re-score";
+      score.textContent = r.total_score + " pts";
+      head.appendChild(name);
+      head.appendChild(score);
+      row.appendChild(head);
+      body.appendChild(row);
+    });
+
+    const footer = document.getElementById("roundend-footer");
+    footer.innerHTML = "";
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    btn.textContent = "Back to home";
+    btn.addEventListener("click", () => { window.location.href = "/"; });
+    footer.appendChild(btn);
+
     modal.classList.add("open");
   }
 
@@ -264,10 +385,6 @@
   modal.addEventListener("click", (e) => {
     if (e.target === modal) modal.classList.remove("open");
   });
-
-  // ---- round-end modal ----
-  const reModal = document.getElementById("roundend-modal");
-  document.getElementById("roundend-close").addEventListener("click", () => reModal.classList.remove("open"));
 
   // ---- copy code ----
   const copyBtn = document.getElementById("copy-btn");

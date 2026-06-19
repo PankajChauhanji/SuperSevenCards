@@ -1,9 +1,8 @@
 """Room: the single source of truth for one game table.
 
-Phase 0 scope covers the lobby lifecycle only: registering/attaching players,
-host tracking and migration, and a placeholder game state. Dealing, turns,
-scoring, and the timer arrive in later phases — the fields they need are added
-when those phases are built so this file stays honest about what exists.
+Holds the full game lifecycle: lobby, dealing, turn play, round scoring with
+elimination, the per-turn clock used by the timeout director, and game end.
+All state is in memory, which is why production runs a single worker.
 """
 import time
 import random
@@ -12,13 +11,13 @@ from typing import Dict, List, Optional
 from config import MAX_PLAYERS, HAND_SIZE
 from game.player import Player
 from game.cards import shuffled_deck
-from game.rules import DRAW_ACTIONS, COMBO_ACTIONS
+from game.rules import DRAW_ACTIONS, COMBO_ACTIONS, ACTION_SINGLE
 
-# Game states. Turn actions (AWAITING_DRAW) and end states (ROUND_END | GAME_END)
-# are wired in later phases; Phase 1 deals into IN_TURN and renders.
+# Game lifecycle states.
 STATE_LOBBY = "LOBBY"
 STATE_IN_TURN = "IN_TURN"
 STATE_ROUND_END = "ROUND_END"
+STATE_GAME_END = "GAME_END"
 
 
 class Room:
@@ -44,6 +43,11 @@ class Room:
         self.first_orbit_complete = False # gates calling Stop
         self.last_caller = None           # who called Stop last round
         self.last_caught = False
+        self.turn_start_ts = 0.0          # when the current turn began (for the timer)
+        self.start_offset = 0             # rotates the first drawer each round
+        self.newly_eliminated: List[str] = []
+        self.game_over = False
+        self.winner: Optional[str] = None
 
     # ---- registration / attachment ----
     def register_player(self, user_id: str, name: str) -> Player:
@@ -115,13 +119,16 @@ class Room:
         self.center_throw = []
         self.last_was_combo = False
         self.turn_order = active
-        self.turn_index = 0
+        # Rotate who leads off each round.
+        self.turn_index = (self.start_offset % len(active)) if active else 0
+        self.start_offset += 1
         self.awaiting_draw = False
         self.turns_completed = 0
         self.initial_active = len(active)
         self.first_orbit_complete = False
         self.last_caller = None
         self.last_caught = False
+        self.turn_start_ts = time.time()
         self.round_number += 1
         self.state = STATE_IN_TURN
 
@@ -209,9 +216,22 @@ class Room:
             self.turn_index = (self.turn_index + 1) % n
             player = self.players.get(self.turn_order[self.turn_index])
             if player and not player.is_safe and not player.eliminated:
+                self.turn_start_ts = time.time()  # fresh clock for the new turn
                 return
         # No eligible player remains — the caller-less auto-end is handled
         # by the gameplay layer via active_count().
+
+    def turn_seconds_left(self) -> Optional[int]:
+        """Whole seconds remaining on the current turn, or None when not in play."""
+        if self.state != STATE_IN_TURN or self.current_turn_id() is None:
+            return None
+        deadline = self.turn_start_ts + self.settings["turn_timer"]
+        return max(0, int(round(deadline - time.time())))
+
+    def is_timed_out(self) -> bool:
+        if self.state != STATE_IN_TURN or self.current_turn_id() is None:
+            return False
+        return time.time() >= self.turn_start_ts + self.settings["turn_timer"]
 
     def active_count(self) -> int:
         """Players still holding cards who can take a turn."""
@@ -232,12 +252,13 @@ class Room:
             "deck_count": len(self.draw_pile),
             "center": [c.to_dict() for c in self.center_throw],
             "last_was_combo": self.last_was_combo,
+            "turn_seconds_left": self.turn_seconds_left(),
             "players": self.public_players(),
         }
 
-    # ---- round end / scoring ----
+    # ---- round end / scoring / elimination ----
     def end_round(self, caller_id: Optional[str]) -> dict:
-        """Score the round, apply totals, transition to ROUND_END."""
+        """Score the round, apply totals, resolve eliminations, set end state."""
         from game.scoring import score_round
 
         participants = [
@@ -252,9 +273,42 @@ class Room:
         self.last_caller = caller_id
         self.last_caught = result["caught"]
         self.awaiting_draw = False
-        self.state = STATE_ROUND_END
+
+        self._resolve_eliminations()
+        self.state = STATE_GAME_END if self.game_over else STATE_ROUND_END
         self._last_result = result
         return result
+
+    def non_eliminated(self) -> List[str]:
+        return [uid for uid, p in self.players.items() if not p.eliminated]
+
+    def _resolve_eliminations(self) -> None:
+        """Eliminate anyone at/over the score cap; set game_over and winner.
+
+        If every remaining player would be eliminated in the same round, the
+        single lowest cumulative total survives and wins (tiebreaker keeps the
+        game producing exactly one winner).
+        """
+        cap = self.settings["max_score"]
+        in_play = self.non_eliminated()
+        crossing = [uid for uid in in_play if self.players[uid].total_score >= cap]
+        newly = []
+
+        if crossing and len(crossing) >= len(in_play):
+            survivor = min(in_play, key=lambda u: self.players[u].total_score)
+            for uid in crossing:
+                if uid != survivor:
+                    self.players[uid].eliminated = True
+                    newly.append(uid)
+        else:
+            for uid in crossing:
+                self.players[uid].eliminated = True
+                newly.append(uid)
+
+        self.newly_eliminated = newly
+        remaining = self.non_eliminated()
+        self.game_over = len(remaining) <= 1
+        self.winner = remaining[0] if (self.game_over and remaining) else None
 
     def round_end_payload(self, result: dict) -> dict:
         """Full reveal — hands are public now that the round is over."""
@@ -269,13 +323,69 @@ class Room:
                 "round_score": player.round_score,
                 "total_score": player.total_score,
                 "is_safe": player.is_safe,
+                "eliminated": player.eliminated,
             })
         return {
             "caller": self.last_caller,
             "caught": self.last_caught,
             "results": rows,
             "players": self.public_players(),
+            "eliminated": list(self.newly_eliminated),
+            "game_over": self.game_over,
+            "winner": self.winner,
         }
+
+    def standings(self) -> List[dict]:
+        """Final-table ordering: survivors first, then by lowest total."""
+        rows = [
+            {
+                "user_id": p.user_id,
+                "name": p.name,
+                "total_score": p.total_score,
+                "eliminated": p.eliminated,
+            }
+            for p in self.players.values()
+        ]
+        rows.sort(key=lambda r: (r["eliminated"], r["total_score"]))
+        return rows
+
+    def game_end_payload(self) -> dict:
+        return {
+            "winner": self.winner,
+            "winner_name": self.players[self.winner].name if self.winner else None,
+            "standings": self.standings(),
+            "players": self.public_players(),
+        }
+
+    # ---- timeout handling (driven by the director loop) ----
+    def force_timeout(self, user_id: str) -> dict:
+        """Resolve a turn that ran out of time. Auto-plays, or removes on the
+        configured timeout limit. Returns a small description for broadcasting."""
+        player = self.players[user_id]
+        player.timeout_count += 1
+        removed = player.timeout_count >= self.settings["timeout_limit"]
+
+        if removed:
+            player.eliminated = True
+            self.awaiting_draw = False
+            self.advance_turn()
+        elif self.awaiting_draw:
+            self.draw_one(user_id)
+        elif player.hand:
+            highest = max(player.hand, key=lambda c: c.value)
+            self.apply_throw(user_id, [highest], ACTION_SINGLE)
+            self.draw_one(user_id)
+        else:
+            self.advance_turn()
+
+        # A mid-round removal can end the game outright.
+        remaining = self.non_eliminated()
+        if removed and len(remaining) <= 1:
+            self.game_over = True
+            self.winner = remaining[0] if remaining else None
+            self.state = STATE_GAME_END
+
+        return {"removed": removed, "timeout_count": player.timeout_count}
 
     def hand_for(self, user_id: str) -> List[dict]:
         """A single player's own cards — sent only to that player."""
