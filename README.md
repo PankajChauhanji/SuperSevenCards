@@ -6,7 +6,7 @@ A fast-paced real-time multiplayer card game built with **Flask-SocketIO** and *
 
 ### 🚀 Play it Live
 
-[![Live Demo](https://super-seven.onrender.com)
+[![Live Demo](https://img.shields.io/badge/PLAY_NOW-Live_on_Render-6706ce?style=for-the-badge&logo=render&logoColor=white)](https://super-seven.onrender.com)
 
 > **💡 Feedback welcome!** If you find a bug or have a feature idea, open an **Issue** — the game is actively evolving.
 
