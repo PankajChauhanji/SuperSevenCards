@@ -736,3 +736,57 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   padding-bottom: 1px;
 }
 .footer-star a:hover { border-bottom-color: var(--gold); }
+
+/* ---------- Batch 1 enhancements ---------- */
+/* 3-second pick countdown on the deck */
+.deck { position: relative; }
+.pick-timer {
+  position: absolute;
+  top: -10px; right: -10px;
+  min-width: 26px; height: 26px;
+  padding: 0 6px;
+  border-radius: 13px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  animation: pickpulse 1s ease-in-out infinite;
+}
+@keyframes pickpulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.15);} }
+
+/* lobby roster: tags + host kick button */
+.roster-tags { display: flex; align-items: center; gap: 0.35rem; }
+.kick-btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+.kick-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* host-editable lobby settings */
+.se-hint { font-weight: 400; font-size: 0.7rem; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.settings-edit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+.se-item { display: flex; flex-direction: column; gap: 0.2rem; }
+.se-item label { font-size: 0.72rem; color: var(--muted); }
+.se-item input {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.se-save { margin-top: 0.7rem; width: auto; padding: 0.5rem 1rem; }

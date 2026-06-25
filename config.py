@@ -29,7 +29,7 @@ SETTINGS_BOUNDS = {
     "stop_penalty": (0, 200),
     "win_discount": (0, 50),
     "turn_timer": (15, 180),
-    "timeout_limit": (1, 2),
+    "timeout_limit": (1, 10),
 }
 
 # Seconds a room with zero connected players is kept before being reaped.

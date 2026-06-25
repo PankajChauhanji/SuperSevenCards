@@ -164,3 +164,47 @@ def register(socketio, manager):
              "settings": room.settings},
             to=code,
         )
+
+    @socketio.on("kick_player")
+    def on_kick(data):
+        data = data or {}
+        code = (data.get("code") or "").strip().upper()
+        user_id = data.get("user_id")
+        target = data.get("target")
+        room = manager.get_room(code)
+        if room is None:
+            return error("This room no longer exists.")
+        if not room.is_host(user_id):
+            return error("Only the host can remove players.")
+        if room.state != STATE_LOBBY:
+            return error("You can only remove players in the lobby.")
+        if not target or target not in room.players:
+            return error("That player isn't in the room.")
+        if target == room.host_id:
+            return error("You can't remove yourself.")
+
+        target_sid = room.players[target].sid
+        room.remove_player(target)
+        if target_sid:
+            emit("kicked", {"code": code}, to=target_sid)
+        emit(
+            "player_list",
+            {"players": room.public_players(), "host_id": room.host_id},
+            to=code,
+        )
+
+    @socketio.on("update_settings")
+    def on_update_settings(data):
+        data = data or {}
+        code = (data.get("code") or "").strip().upper()
+        user_id = data.get("user_id")
+        room = manager.get_room(code)
+        if room is None:
+            return error("This room no longer exists.")
+        if not room.is_host(user_id):
+            return error("Only the host can change the settings.")
+        if room.state != STATE_LOBBY:
+            return error("Settings can only be changed in the lobby.")
+
+        room.settings = _clean_settings(data.get("settings"))
+        emit("settings_updated", {"settings": room.settings}, to=code)

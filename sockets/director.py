@@ -25,11 +25,31 @@ def register(socketio, manager):
 
 def _tick(socketio, manager):
     for code, room in list(manager.rooms.items()):
-        if room.state != STATE_IN_TURN or not room.is_timed_out():
+        if room.state != STATE_IN_TURN:
             continue
-
         cur = room.current_turn_id()
         if cur is None:
+            continue
+
+        # 1) Post-discard pick timer: auto-draw after the fixed 3s, NO penalty.
+        #    While a draw is owed, the turn timer does not also fire.
+        if room.awaiting_draw:
+            if room.pick_timed_out():
+                sid = room.players[cur].sid
+                name = room.players[cur].name
+                result = room.draw_one(cur)
+                drawn_id = result["card"].id if result["card"] else None
+                socketio.emit("auto_picked", {"user_id": cur, "name": name}, to=code)
+                if result["reshuffled"]:
+                    socketio.emit("deck_reshuffled", {}, to=code)
+                if sid:
+                    socketio.emit("your_hand",
+                                  {"cards": room.hand_for(cur), "drawn": drawn_id}, to=sid)
+                socketio.emit("table_state", room.public_round_state(), to=code)
+            continue
+
+        # 2) Turn timer: penalised auto-play / removal (only when no draw owed).
+        if not room.is_timed_out():
             continue
 
         name = room.players[cur].name

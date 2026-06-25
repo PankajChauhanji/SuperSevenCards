@@ -19,6 +19,10 @@ STATE_IN_TURN = "IN_TURN"
 STATE_ROUND_END = "ROUND_END"
 STATE_GAME_END = "GAME_END"
 
+# Fixed grace period (seconds) to take the owed draw after a discard before the
+# server auto-picks for the player. Deliberately NOT host-configurable.
+PICK_SECONDS = 3
+
 
 class Room:
     def __init__(self, code: str, host_id: str, settings: dict):
@@ -38,6 +42,7 @@ class Room:
         self.turn_order: List[str] = []   # active user_ids, seating order
         self.turn_index = 0
         self.awaiting_draw = False        # current player owes a draw
+        self.awaiting_draw_ts = 0.0       # when the owed draw began (pick timer)
         self.turns_completed = 0          # completed turns this round
         self.initial_active = 0           # players dealt in this round
         self.first_orbit_complete = False # gates calling Stop
@@ -176,6 +181,7 @@ class Room:
         owes_draw = action in DRAW_ACTIONS
         if owes_draw:
             self.awaiting_draw = True
+            self.awaiting_draw_ts = time.time()  # start the 3s pick timer
             # Turn does not advance until the draw is taken.
         else:
             # Only a no-draw combo can empty a hand -> player is safe.
@@ -236,6 +242,18 @@ class Room:
             return False
         return time.time() >= self.turn_start_ts + self.settings["turn_timer"]
 
+    def pick_seconds_left(self) -> Optional[int]:
+        """Whole seconds left on the 3s post-discard pick timer, or None."""
+        if self.state != STATE_IN_TURN or not self.awaiting_draw:
+            return None
+        return max(0, int(round(self.awaiting_draw_ts + PICK_SECONDS - time.time())))
+
+    def pick_timed_out(self) -> bool:
+        """True once the owed draw has gone untaken past the fixed grace period."""
+        if self.state != STATE_IN_TURN or not self.awaiting_draw:
+            return False
+        return time.time() >= self.awaiting_draw_ts + PICK_SECONDS
+
     def active_count(self) -> int:
         """Players still holding cards who can take a turn."""
         return sum(
@@ -256,6 +274,7 @@ class Room:
             "center": [c.to_dict() for c in self.center_throw],
             "last_was_combo": self.last_was_combo,
             "turn_seconds_left": self.turn_seconds_left(),
+            "pick_seconds_left": self.pick_seconds_left(),
             "players": self.public_players(),
         }
 
@@ -422,6 +441,7 @@ class Room:
         self.center_throw = []
         self.last_was_combo = False
         self.awaiting_draw = False
+        self.awaiting_draw_ts = 0.0
         self.turns_completed = 0
         self.initial_active = 0
         self.first_orbit_complete = False

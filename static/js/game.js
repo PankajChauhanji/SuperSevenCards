@@ -23,6 +23,7 @@
     lastWasCombo: false,
     firstOrbitComplete: false,
     secondsLeft: null,
+    pickSecondsLeft: null,
     justDrawnId: null,
     settings: null,
   };
@@ -93,6 +94,7 @@
       if (window.Selection) window.Selection.refresh();
     }
     syncTimer();
+    syncPickTimer();
   });
 
   function applyTable(data) {
@@ -107,6 +109,7 @@
     view.lastWasCombo = !!data.last_was_combo;
     view.firstOrbitComplete = !!data.first_orbit_complete;
     if (typeof data.turn_seconds_left === "number") view.secondsLeft = data.turn_seconds_left;
+    view.pickSecondsLeft = (typeof data.pick_seconds_left === "number") ? data.pick_seconds_left : null;
 
     // Sound cue when the turn becomes mine.
     if (view.state === "IN_TURN" && view.currentTurn === youId && prevTurn !== youId) {
@@ -138,12 +141,18 @@
     const p = view.players.find((x) => x.user_id === data.by);
     const who = p ? p.name : "Someone";
     const verb = {
-      single: "discarded a card",
-      set: "played a set",
-      sequence: "played a sequence",
-      match: "matched the throw",
-    }[data.action_type] || "played";
+      single: "made a move",
+      pair: "dropped a pair",
+      set: "laid down a set",
+      sequence: "ran a sequence",
+      match: "matched the table",
+    }[data.action_type] || "made a move";
     showToast(who + " " + verb);
+  });
+
+  socket.on("auto_picked", (data) => {
+    if (data.user_id === youId) showToast("Auto-picked a card for you");
+    else showToast(data.name + " was dealt a card");
   });
 
   socket.on("deck_reshuffled", () => showToast("Deck reshuffled"));
@@ -155,6 +164,17 @@
 
   socket.on("player_eliminated", (data) => {
     showToast(data.name + " is out of the game");
+  });
+
+  socket.on("kicked", () => {
+    alert("You have been removed from the room by the host.");
+    window.location.href = "/";
+  });
+
+  socket.on("settings_updated", (data) => {
+    if (data.settings) view.settings = data.settings;
+    if (view.state !== "IN_TURN") renderLobby();
+    showToast("Host updated the game settings");
   });
 
   socket.on("round_end", (data) => {
@@ -190,11 +210,28 @@
     el.textContent = "\u23f1 " + Math.max(0, view.secondsLeft) + "s";
     el.classList.toggle("low", view.secondsLeft <= 10);
   }
+  function syncPickTimer() {
+    const el = document.getElementById("pick-timer");
+    if (!el) return;
+    const mine = view.currentTurn === youId;
+    if (view.state === "IN_TURN" && view.awaitingDraw && mine && view.pickSecondsLeft != null) {
+      el.style.display = "block";
+      el.textContent = Math.max(0, view.pickSecondsLeft);
+    } else {
+      el.style.display = "none";
+    }
+  }
+
   setInterval(() => {
     if (view.state === "IN_TURN" && typeof view.secondsLeft === "number" && view.secondsLeft > 0) {
       view.secondsLeft -= 1;
       syncTimer();
     }
+    if (view.state === "IN_TURN" && view.awaitingDraw &&
+        typeof view.pickSecondsLeft === "number" && view.pickSecondsLeft > 0) {
+      view.pickSecondsLeft -= 1;
+    }
+    syncPickTimer();
   }, 1000);
 
   // ---- view switching ----
@@ -231,8 +268,21 @@
       who.appendChild(name);
 
       const tags = document.createElement("div");
+      tags.className = "roster-tags";
       if (p.user_id === view.hostId) tags.appendChild(makeBadge("Host", "host"));
       if (p.user_id === youId) tags.appendChild(makeBadge("You", "you"));
+      if (youId === view.hostId && p.user_id !== youId) {
+        const kick = document.createElement("button");
+        kick.className = "kick-btn";
+        kick.textContent = "\u2715";
+        kick.title = "Remove " + p.name;
+        kick.addEventListener("click", () => {
+          if (confirm("Remove " + p.name + " from the room?")) {
+            socket.emit("kick_player", { code, user_id: youId, target: p.user_id });
+          }
+        });
+        tags.appendChild(kick);
+      }
 
       li.appendChild(who);
       li.appendChild(tags);
@@ -267,23 +317,64 @@
     if (!el) return;
     const s = view.settings;
     if (!s) { el.innerHTML = ""; return; }
-    const items = [
-      ["Out at", s.max_score + " pts"],
-      ["Stop penalty", "+" + s.stop_penalty],
-      ["Win discount", "\u2212" + s.win_discount],
-      ["Turn timer", s.turn_timer + "s"],
-      ["Timeouts", s.timeout_limit],
+    const isHost = youId === view.hostId;
+
+    if (!isHost) {
+      const items = [
+        ["Out at", s.max_score + " pts"],
+        ["Stop penalty", "+" + s.stop_penalty],
+        ["Win discount", "\u2212" + s.win_discount],
+        ["Turn timer", s.turn_timer + "s"],
+        ["Timeouts", s.timeout_limit],
+      ];
+      el.innerHTML = "<h3>Game settings</h3>";
+      const grid = document.createElement("div");
+      grid.className = "settings-readout";
+      items.forEach(([k, v]) => {
+        const row = document.createElement("div");
+        row.className = "sr-item";
+        row.innerHTML = "<span>" + k + "</span><strong>" + v + "</strong>";
+        grid.appendChild(row);
+      });
+      el.appendChild(grid);
+      return;
+    }
+
+    // Host: editable before the game starts.
+    el.innerHTML = "<h3>Game settings <span class=\"se-hint\">(you can edit these)</span></h3>";
+    const fields = [
+      ["max_score", "Max score (out)", 20, 1000],
+      ["stop_penalty", "Stop penalty", 0, 200],
+      ["win_discount", "Win discount", 0, 50],
+      ["turn_timer", "Turn timer (s)", 15, 180],
+      ["timeout_limit", "Timeouts allowed", 1, 10],
     ];
-    el.innerHTML = "<h3>Game settings</h3>";
     const grid = document.createElement("div");
-    grid.className = "settings-readout";
-    items.forEach(([k, v]) => {
-      const row = document.createElement("div");
-      row.className = "sr-item";
-      row.innerHTML = "<span>" + k + "</span><strong>" + v + "</strong>";
-      grid.appendChild(row);
+    grid.className = "settings-edit";
+    fields.forEach(([key, label, lo, hi]) => {
+      const wrap = document.createElement("div");
+      wrap.className = "se-item";
+      const lab = document.createElement("label");
+      lab.textContent = label;
+      const inp = document.createElement("input");
+      inp.type = "number"; inp.min = lo; inp.max = hi; inp.value = s[key];
+      inp.dataset.key = key;
+      wrap.appendChild(lab); wrap.appendChild(inp);
+      grid.appendChild(wrap);
     });
     el.appendChild(grid);
+
+    const save = document.createElement("button");
+    save.className = "btn-ghost se-save";
+    save.textContent = "Save settings";
+    save.addEventListener("click", () => {
+      const out = {};
+      grid.querySelectorAll("input").forEach((i) => {
+        out[i.dataset.key] = parseInt(i.value, 10);
+      });
+      socket.emit("update_settings", { code, user_id: youId, settings: out });
+    });
+    el.appendChild(save);
   }
 
   function makeBadge(text, kind) {
