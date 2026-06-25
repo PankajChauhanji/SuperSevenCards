@@ -19,7 +19,7 @@
   function cardImg(card, className) {
     const img = document.createElement("img");
     img.className = "card " + (className || "");
-    img.src = CARD_PATH + card.id + ".svg";
+    img.src = CARD_PATH + card.face + ".svg";
     img.alt = card.code + " " + card.suit;
     img.draggable = false;
     return img;
@@ -59,9 +59,19 @@
       const dot = document.createElement("span");
       dot.className = "dot" + (p.connected ? " on" : "");
       left.appendChild(dot);
-      left.appendChild(document.createTextNode(p.name));
-      if (p.user_id === state.you) left.appendChild(badge("You", "you"));
-      if (p.user_id === state.hostId) left.appendChild(badge("Host", "host"));
+
+      if (p.user_id === state.hostId) {
+        const crown = document.createElement("span");
+        crown.className = "host-crown";
+        crown.textContent = "\u265B";   // chess-queen glyph reads as a crown
+        crown.title = "Host";
+        left.appendChild(crown);
+      }
+
+      const text = document.createElement("span");
+      text.className = "sb-text";
+      text.textContent = p.name + (p.user_id === state.you ? " (you)" : "");
+      left.appendChild(text);
 
       const score = document.createElement("span");
       score.className = "sb-score";

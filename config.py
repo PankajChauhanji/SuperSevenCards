@@ -21,6 +21,7 @@ DEFAULT_SETTINGS = {
     "win_discount": 5,     # strictly-lowest caller scores max(total - this, 0)
     "turn_timer": 40,      # seconds per turn before auto-discard (Phase 4)
     "timeout_limit": 3,    # cumulative timeouts before a player is removed
+    "num_decks": 1,        # number of 52-card decks shuffled together
 }
 
 # Bounds used to sanitise host-supplied settings.
@@ -30,6 +31,7 @@ SETTINGS_BOUNDS = {
     "win_discount": (0, 50),
     "turn_timer": (15, 180),
     "timeout_limit": (1, 10),
+    "num_decks": (1, 10),
 }
 
 # Seconds a room with zero connected players is kept before being reaped.

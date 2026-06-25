@@ -108,7 +108,7 @@ class Room:
             uid for uid, p in self.players.items()
             if p.connected and not p.eliminated
         ]
-        deck = shuffled_deck()
+        deck = shuffled_deck(self.settings.get("num_decks", 1))
 
         # Reset per-round player state.
         for player in self.players.values():

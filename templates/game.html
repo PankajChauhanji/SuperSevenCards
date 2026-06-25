@@ -16,7 +16,7 @@
       <span class="turn-timer" id="turn-timer" style="display:none"></span>
       <span class="round-chip" id="round-chip" style="display:none">Round 1</span>
       <button class="icon-btn" id="mute-btn" title="Sound on/off" aria-label="Sound on/off">&#128266;</button>
-      <button class="icon-btn" id="rules-btn" title="Game rules" aria-label="Game rules">?</button>
+      <button class="rules-btn" id="rules-btn" title="How to play" aria-label="How to play"><span class="rb-ico">&#9432;</span> Rules</button>
     </div>
   </div>
 
@@ -70,6 +70,24 @@
     </section>
   </div>
 
+  <!-- Reactions (shown during play) -->
+  <div class="reactions-layer" id="reactions-layer"></div>
+  <div class="reaction-dock" id="reaction-dock" style="display:none">
+    <div class="reaction-panel" id="reaction-panel" hidden>
+      <button class="rx" data-e="😂" title="Laugh">😂</button>
+      <button class="rx" data-e="😲" title="Surprise">😲</button>
+      <button class="rx" data-e="🤯" title="Mind blown">🤯</button>
+      <button class="rx" data-e="😭" title="Cry">😭</button>
+      <button class="rx" data-e="😡" title="Anger">😡</button>
+      <button class="rx" data-e="🔥" title="Nice move">🔥</button>
+      <button class="rx" data-e="⚡" title="Play faster">⚡</button>
+      <button class="rx" data-e="👏" title="Good game">👏</button>
+      <button class="rx" data-e="😎" title="Smooth move">😎</button>
+      <button class="rx" data-e="🎉" title="Celebration">🎉</button>
+    </div>
+    <button class="reaction-fab" id="reaction-fab" title="React" aria-label="Send a reaction">😀</button>
+  </div>
+
   <!-- Rules modal -->
   <div class="modal-backdrop" id="rules-modal">
     <div class="modal" role="dialog" aria-modal="true" aria-label="Super Seven rules">
@@ -82,9 +100,10 @@
       <h3>On your turn — pick one</h3>
       <ul>
         <li><strong>Discard one card</strong> — then draw one from the deck.</li>
+        <li><strong>Pair</strong> — throw two of the same rank, then draw one.</li>
         <li><strong>Set</strong> — throw 3 or 4 of the same rank; no draw.</li>
         <li><strong>Sequence</strong> — throw 3+ cards in a run (suits don't matter); no draw.</li>
-        <li><strong>Match</strong> — if the player before you threw a combo, throw any cards whose ranks appear in it, then draw one.</li>
+        <li><strong>Match</strong> — throw any cards whose ranks are showing in the center pile, then draw one.</li>
       </ul>
 
       <h3>Going to zero</h3>
@@ -109,14 +128,13 @@
     </div>
   </div>
   
-  <footer class="site-footer">
+  <footer class="site-footer compact">
     <div class="footer-links">
       <a href="https://github.com/PankajChauhanji/SuperSevenCards" target="_blank" rel="noreferrer">GitHub</a>
       <a href="mailto:pankajchauhan.nitsri@gmail.com">Email</a>
       <a href="https://www.linkedin.com/in/pankaj-chauhan-sde/" target="_blank" rel="noreferrer">LinkedIn</a>
+      <a href="https://github.com/PankajChauhanji/SuperSevenCards" target="_blank" rel="noreferrer" class="star-link">★ Star</a>
     </div>
-    <p class="footer-copy">&copy; Super Seven · PankajChauhanji</p>
-    <p class="footer-star">Enjoyed the game? <a href="https://github.com/PankajChauhanji/SuperSevenCards" target="_blank" rel="noreferrer">Leave a ⭐ on GitHub</a> — it keeps the project alive.</p>
   </footer>
 
   <div id="toast"></div>

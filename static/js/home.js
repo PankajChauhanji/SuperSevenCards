@@ -20,7 +20,7 @@
   });
 
   function gatherSettings() {
-    const ids = ["max_score", "stop_penalty", "win_discount", "turn_timer", "timeout_limit"];
+    const ids = ["max_score", "stop_penalty", "win_discount", "turn_timer", "timeout_limit", "num_decks"];
     const out = {};
     ids.forEach((id) => {
       const el = document.getElementById("set_" + id);

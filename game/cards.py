@@ -27,15 +27,22 @@ def card_value(rank: int) -> int:
 
 
 class Card:
-    __slots__ = ("rank", "suit")
+    __slots__ = ("rank", "suit", "copy")
 
-    def __init__(self, rank: int, suit: str):
+    def __init__(self, rank: int, suit: str, copy: int = 0):
         self.rank = rank
         self.suit = suit
+        self.copy = copy            # which deck this card came from (0-based)
+
+    @property
+    def face(self) -> str:
+        """Rank+suit code — the image basename. NOT unique across decks."""
+        return f"{rank_code(self.rank)}{self.suit}"
 
     @property
     def id(self) -> str:
-        return f"{rank_code(self.rank)}{self.suit}"
+        """Stable, unique handle for one physical card (unique across decks)."""
+        return f"{self.face}#{self.copy}"
 
     @property
     def value(self) -> int:
@@ -43,7 +50,8 @@ class Card:
 
     def to_dict(self) -> dict:
         return {
-            "id": self.id,
+            "id": self.id,      # unique per physical card (selection / dedup)
+            "face": self.face,  # image basename: /static/img/cards/<face>.svg
             "rank": self.rank,
             "suit": self.suit,
             "code": rank_code(self.rank),
@@ -55,11 +63,17 @@ class Card:
         return f"Card({self.id})"
 
 
-def build_deck() -> List[Card]:
-    return [Card(rank, suit) for suit in SUITS for rank in RANKS]
+def build_deck(num_decks: int = 1) -> List[Card]:
+    """Build one or more standard 52-card decks combined into one pile."""
+    return [
+        Card(rank, suit, d)
+        for d in range(max(1, num_decks))
+        for suit in SUITS
+        for rank in RANKS
+    ]
 
 
-def shuffled_deck() -> List[Card]:
-    deck = build_deck()
+def shuffled_deck(num_decks: int = 1) -> List[Card]:
+    deck = build_deck(num_decks)
     random.shuffle(deck)
     return deck

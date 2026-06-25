@@ -790,3 +790,107 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   font-size: 0.95rem;
 }
 .se-save { margin-top: 0.7rem; width: auto; padding: 0.5rem 1rem; }
+
+/* ---------- Batch 3: reactions, crown, rules button, footer ---------- */
+/* reactions: floating layer + dock + panel */
+.reactions-layer {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 60;
+}
+.rx-float {
+  position: absolute;
+  bottom: 90px;
+  font-size: 2.4rem;
+  text-align: center;
+  animation: rxrise 2.5s ease-out forwards;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+.rx-float .rx-name {
+  display: block;
+  font-size: 0.7rem;
+  font-family: var(--display);
+  color: var(--cream);
+  background: rgba(0,0,0,0.45);
+  border-radius: 8px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+@keyframes rxrise {
+  0%   { transform: translateY(0) translateX(0) scale(0.6); opacity: 0; }
+  15%  { opacity: 1; transform: translateY(-10px) scale(1.1); }
+  100% { transform: translateY(-55vh) translateX(var(--drift,0)) scale(1); opacity: 0; }
+}
+
+.reaction-dock {
+  position: fixed;
+  left: 16px; bottom: 16px;
+  z-index: 61;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+}
+.reaction-fab {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: transform 0.12s ease;
+}
+.reaction-fab:hover { transform: scale(1.08); }
+.reaction-panel[hidden] { display: none; }
+.reaction-panel {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  max-width: 232px;
+}
+.reaction-panel .rx {
+  width: 40px; height: 40px;
+  border: none; background: transparent;
+  font-size: 1.5rem; cursor: pointer; border-radius: 10px;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+.reaction-panel .rx:hover { background: rgba(255,255,255,0.08); transform: scale(1.15); }
+
+/* host crown in scoreboard + non-crowding layout */
+.sb-name { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+.sb-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-score { flex: 0 0 auto; padding-left: 0.5rem; }
+.host-crown { color: var(--gold); font-size: 0.9rem; flex: 0 0 auto; }
+
+/* prominent rules button */
+.rules-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  border: 1px solid var(--gold);
+  background: rgba(230,178,60,0.12);
+  color: var(--gold);
+  font-family: var(--display); font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.15s ease;
+}
+.rules-btn:hover { background: rgba(230,178,60,0.22); }
+.rules-btn .rb-ico { font-size: 1.05rem; }
+
+/* compact footer */
+.site-footer.compact { padding: 0.6rem 1rem; min-height: unset; }
+.site-footer.compact .footer-links { margin: 0; flex-wrap: wrap; gap: 1rem; }
+.star-link { color: var(--gold) !important; }
+
+@media (max-width: 640px) {
+  .site-footer.compact { padding: 0.5rem 0.75rem; }
+  .site-footer.compact .footer-links { gap: 0.8rem; font-size: 0.8rem; }
+  .reaction-fab { width: 46px; height: 46px; font-size: 1.3rem; }
+  .reaction-dock { left: 10px; bottom: 10px; }
+}

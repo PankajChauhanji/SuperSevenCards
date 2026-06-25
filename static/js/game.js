@@ -239,6 +239,8 @@
     const inRound = view.state === "IN_TURN";
     lobbyView.style.display = inRound ? "none" : "block";
     tableView.style.display = inRound ? "flex" : "none";
+    const dock = document.getElementById("reaction-dock");
+    if (dock) dock.style.display = inRound ? "flex" : "none";
     if (inRound) {
       Table.render(view);
     } else {
@@ -326,6 +328,7 @@
         ["Win discount", "\u2212" + s.win_discount],
         ["Turn timer", s.turn_timer + "s"],
         ["Timeouts", s.timeout_limit],
+        ["Decks", s.num_decks || 1],
       ];
       el.innerHTML = "<h3>Game settings</h3>";
       const grid = document.createElement("div");
@@ -348,6 +351,7 @@
       ["win_discount", "Win discount", 0, 50],
       ["turn_timer", "Turn timer (s)", 15, 180],
       ["timeout_limit", "Timeouts allowed", 1, 10],
+      ["num_decks", "Number of decks", 1, 10],
     ];
     const grid = document.createElement("div");
     grid.className = "settings-edit";
@@ -439,7 +443,7 @@
         r.hand.forEach((c) => {
           const img = document.createElement("img");
           img.className = "card re-card";
-          img.src = "/static/img/cards/" + c.id + ".svg";
+          img.src = "/static/img/cards/" + c.face + ".svg";
           img.alt = c.code + c.suit;
           cards.appendChild(img);
         });
@@ -550,6 +554,44 @@
     footer.appendChild(home);
 
     modal.classList.add("open");
+  }
+
+  // ---- reactions ----
+  const rxDock = document.getElementById("reaction-dock");
+  const rxFab = document.getElementById("reaction-fab");
+  const rxPanel = document.getElementById("reaction-panel");
+  if (rxFab && rxPanel) {
+    rxFab.addEventListener("click", () => { rxPanel.hidden = !rxPanel.hidden; });
+    rxPanel.querySelectorAll(".rx").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        socket.emit("reaction", { code, user_id: youId, emoji: btn.dataset.e });
+        rxPanel.hidden = true;
+      });
+    });
+    document.addEventListener("click", (e) => {
+      if (rxDock && !rxDock.contains(e.target)) rxPanel.hidden = true;
+    });
+  }
+
+  socket.on("reaction", (data) => floatReaction(data.emoji, data.name));
+
+  function floatReaction(emoji, name) {
+    const layer = document.getElementById("reactions-layer");
+    if (!layer) return;
+    const el = document.createElement("div");
+    el.className = "rx-float";
+    el.textContent = emoji;
+    if (name) {
+      const tag = document.createElement("span");
+      tag.className = "rx-name";
+      tag.textContent = name;
+      el.appendChild(tag);
+    }
+    // Random-ish horizontal start in the lower-middle of the screen.
+    el.style.left = (10 + Math.random() * 70) + "%";
+    el.style.setProperty("--drift", (Math.random() * 60 - 30) + "px");
+    layer.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
   }
 
   // ---- selection / actions ----
