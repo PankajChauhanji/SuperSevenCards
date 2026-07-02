@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: super-seven-cards
+    name: super-seven
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
