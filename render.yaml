@@ -3,6 +3,7 @@ services:
     name: super-seven
     runtime: python
     plan: free
+    region: singapore
     buildCommand: pip install -r requirements.txt
     startCommand: python3 app.py
     envVars:
