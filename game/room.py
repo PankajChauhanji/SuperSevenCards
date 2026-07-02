@@ -8,10 +8,10 @@ import time
 import random
 from typing import Dict, List, Optional
 
-from config import MAX_PLAYERS, HAND_SIZE
+from config import MAX_PLAYERS, HAND_SIZE, MATCH_REQUIRES_DRAW
 from game.player import Player
 from game.cards import shuffled_deck
-from game.rules import DRAW_ACTIONS, COMBO_ACTIONS, ACTION_SINGLE
+from game.rules import DRAW_ACTIONS, COMBO_ACTIONS, ACTION_SINGLE, ACTION_MATCH
 
 # Game lifecycle states.
 STATE_LOBBY = "LOBBY"
@@ -98,6 +98,11 @@ class Room:
     def any_connected(self) -> bool:
         return any(p.connected for p in self.players.values())
 
+    def any_human_connected(self) -> bool:
+        """True if at least one non-bot player is connected.
+        Used by the reaper so solo rooms don't live forever after the human leaves."""
+        return any(p.connected and not p.is_bot for p in self.players.values())
+
     def public_players(self) -> List[dict]:
         return [p.public_view() for p in self.players.values()]
 
@@ -179,6 +184,8 @@ class Room:
         self.last_was_combo = action in COMBO_ACTIONS
 
         owes_draw = action in DRAW_ACTIONS
+        if action == ACTION_MATCH and not MATCH_REQUIRES_DRAW:
+            owes_draw = False
         if owes_draw:
             self.awaiting_draw = True
             self.awaiting_draw_ts = time.time()  # start the 3s pick timer
@@ -266,6 +273,8 @@ class Room:
         return {
             "state": self.state,
             "round_number": self.round_number,
+            "host_id": self.host_id,
+            "settings": self.settings,
             "current_turn": self.current_turn_id(),
             "awaiting_draw": self.awaiting_draw,
             "first_orbit_complete": self.first_orbit_complete,
@@ -273,6 +282,7 @@ class Room:
             "deck_count": len(self.draw_pile),
             "center": [c.to_dict() for c in self.center_throw],
             "last_was_combo": self.last_was_combo,
+            "match_requires_draw": MATCH_REQUIRES_DRAW,
             "turn_seconds_left": self.turn_seconds_left(),
             "pick_seconds_left": self.pick_seconds_left(),
             "players": self.public_players(),
@@ -454,11 +464,12 @@ class Room:
 
     # ---- host migration ----
     def migrate_host(self) -> Optional[str]:
-        """Promote the next connected player to host. Returns new host id."""
+        """Promote the next connected player to host. Returns new host id.
+        Bot players are never promoted to host — they can't interact with the UI."""
         if self.host_id in self.players and self.players[self.host_id].connected:
             return self.host_id
         for player in self.players.values():
-            if player.connected:
+            if player.connected and not player.is_bot:
                 self.host_id = player.user_id
                 return self.host_id
         return None

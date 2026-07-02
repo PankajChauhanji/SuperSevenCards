@@ -42,7 +42,7 @@ class RoomManager:
         stale = [
             code
             for code, room in self.rooms.items()
-            if not room.any_connected() and (now - room.created_at) > EMPTY_ROOM_TTL
+            if not room.any_human_connected() and (now - room.created_at) > EMPTY_ROOM_TTL
         ]
         for code in stale:
             self.rooms.pop(code, None)

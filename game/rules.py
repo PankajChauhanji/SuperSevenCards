@@ -63,6 +63,10 @@ def infer_action(ranks: List[int], center_ranks: Optional[Set[int]] = None) -> O
     if n == 0:
         return None
     if n == 1:
+        # A single card that matches a rank in the centre is a Match (no draw
+        # when MATCH_REQUIRES_DRAW is False), not a plain Single discard.
+        if center_ranks and is_match(ranks, center_ranks):
+            return ACTION_MATCH
         return ACTION_SINGLE
 
     # No-draw combos take priority.
@@ -71,11 +75,11 @@ def infer_action(ranks: List[int], center_ranks: Optional[Set[int]] = None) -> O
     if is_sequence(ranks):
         return ACTION_SEQUENCE
 
+    # Match takes priority over pair when the rank is in the centre (free play).
+    if center_ranks and is_match(ranks, center_ranks):
+        return ACTION_MATCH
+
     # Two of a kind: a legal discard that still draws one.
     if n == 2 and len(set(ranks)) == 1:
         return ACTION_PAIR
-
-    # Match: throw any cards whose ranks are all in the centre, draw one.
-    if center_ranks and is_match(ranks, center_ranks):
-        return ACTION_MATCH
     return None

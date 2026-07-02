@@ -21,6 +21,7 @@ class Player:
     timeout_count: int = 0       # cumulative timeouts this game
     eliminated: bool = False     # out of the game
     color_index: int = 0         # stable per-player colour (assigned at join)
+    is_bot: bool = False         # single-player mode only; never True in group games
 
     def public_view(self) -> dict:
         """Everything other players are allowed to see. No card faces."""
