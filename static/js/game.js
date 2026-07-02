@@ -21,6 +21,7 @@
     roundNumber: 0,
     awaitingDraw: false,
     lastWasCombo: false,
+    matchRequiresDraw: true,
     firstOrbitComplete: false,
     secondsLeft: null,
     pickSecondsLeft: null,
@@ -100,6 +101,8 @@
   function applyTable(data) {
     if (data.state) view.state = data.state;
     view.players = data.players;
+    if (data.host_id) view.hostId = data.host_id;
+    if (data.settings) view.settings = data.settings;
     view.currentTurn = data.current_turn;
     view.turnOrder = data.turn_order;
     view.deckCount = data.deck_count;
@@ -107,6 +110,7 @@
     view.roundNumber = data.round_number;
     view.awaitingDraw = !!data.awaiting_draw;
     view.lastWasCombo = !!data.last_was_combo;
+    if (typeof data.match_requires_draw === "boolean") view.matchRequiresDraw = data.match_requires_draw;
     view.firstOrbitComplete = !!data.first_orbit_complete;
     if (typeof data.turn_seconds_left === "number") view.secondsLeft = data.turn_seconds_left;
     view.pickSecondsLeft = (typeof data.pick_seconds_left === "number") ? data.pick_seconds_left : null;
@@ -120,6 +124,12 @@
 
   socket.on("your_hand", (data) => {
     view.hand = data.cards || [];
+    // If the server tells us whether a draw is owed, apply it immediately.
+    // Prevents stale awaitingDraw=true flash between your_hand and table_state
+    // (e.g. after a Match with MATCH_REQUIRES_DRAW=false).
+    if (typeof data.owes_draw === "boolean") {
+      view.awaitingDraw = data.owes_draw;
+    }
     if (data.drawn) {
       view.justDrawnId = data.drawn;
       clearTimeout(drawnTimer);

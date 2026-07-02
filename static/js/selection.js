@@ -14,7 +14,11 @@
     const ranks = cards.map((c) => c.rank).sort((a, b) => a - b);
     const n = ranks.length;
     if (n === 0) return null;
-    if (n === 1) return "single";
+    if (n === 1) {
+      // Single card matching the centre is a Match, not a plain Single.
+      if (centerRanks && centerRanks.size && centerRanks.has(ranks[0])) return "match";
+      return "single";
+    }
     const allSame = ranks.every((r) => r === ranks[0]);
     if ((n === 3 || n === 4) && allSame) return "set";
     if (n >= 3) {
@@ -23,8 +27,9 @@
       for (let i = 1; i < n; i++) if (ranks[i] !== ranks[i - 1] + 1) consecutive = false;
       if (distinct && consecutive) return "sequence";
     }
-    if (n === 2 && allSame) return "pair";
+    // Match takes priority over pair when the rank is in the centre (free play).
     if (centerRanks && centerRanks.size && cards.every((c) => centerRanks.has(c.rank))) return "match";
+    if (n === 2 && allSame) return "pair";
     return null;
   }
 
@@ -33,8 +38,11 @@
     pair: "Pair \u00b7 draw 1",
     set: "Set \u00b7 no draw",
     sequence: "Sequence \u00b7 no draw",
-    match: "Match \u00b7 draw 1",
   };
+
+  function matchLabel() {
+    return view().matchRequiresDraw === false ? "Match \u00b7 no draw" : "Match \u00b7 draw 1";
+  }
 
   function selectedCards() {
     const hand = view().hand || [];
@@ -105,7 +113,7 @@
     const centerRanks = new Set((v.center || []).map((c) => c.rank));
     const action = infer(cards, centerRanks);
     if (action) {
-      label.textContent = LABELS[action];
+      label.textContent = action === "match" ? matchLabel() : LABELS[action];
       label.className = "play-label ok";
       throwBtn.disabled = false;
     } else {

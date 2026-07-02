@@ -5,6 +5,7 @@
   const nameInput = document.getElementById("name");
   const codeInput = document.getElementById("code");
   const createBtn = document.getElementById("create-btn");
+  const soloBtn = document.getElementById("solo-btn");
   const joinBtn = document.getElementById("join-btn");
   const settingsToggle = document.getElementById("settings-toggle");
   const settingsGrid = document.getElementById("settings-grid");
@@ -31,6 +32,7 @@
 
   function lockButtons(locked) {
     createBtn.disabled = locked;
+    soloBtn.disabled = locked;
     joinBtn.disabled = locked;
   }
 
@@ -40,6 +42,18 @@
     window.Identity.name(name);
     lockButtons(true);
     socket.emit("create_room", {
+      name,
+      user_id: window.Identity.userId(),
+      settings: gatherSettings(),
+    });
+  });
+
+  soloBtn.addEventListener("click", () => {
+    const name = nameInput.value.trim();
+    if (!name) return showToast("Pick a name first.");
+    window.Identity.name(name);
+    lockButtons(true);
+    socket.emit("create_solo", {
       name,
       user_id: window.Identity.userId(),
       settings: gatherSettings(),

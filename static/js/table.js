@@ -48,6 +48,9 @@
     const ordered = state.players.slice().sort(
       (a, b) => (a.eliminated - b.eliminated) || (a.score - b.score)
     );
+    // Max score cap comes from room settings broadcast in table_state.
+    const maxScore = (state.settings && state.settings.max_score) || 100;
+
     ordered.forEach((p) => {
       const li = document.createElement("li");
       if (p.user_id === state.currentTurn) li.classList.add("turn");
@@ -79,6 +82,18 @@
 
       li.appendChild(left);
       li.appendChild(score);
+
+      // Progress strip: green -> yellow -> orange -> red based on score / max.
+      const pct = Math.min(1, (p.score || 0) / maxScore);
+      const bar = document.createElement("div");
+      bar.className = "sb-bar";
+      const fill = document.createElement("div");
+      fill.className = "sb-bar-fill";
+      fill.style.setProperty("--bar-pct", (pct * 100).toFixed(1) + "%");
+      fill.style.setProperty("--bar-raw", pct.toFixed(4));
+      bar.appendChild(fill);
+      li.appendChild(bar);
+
       list.appendChild(li);
     });
   }
