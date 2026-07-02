@@ -45,7 +45,13 @@ body {
   letter-spacing: 0.04em;
   display: inline-flex;
   align-items: baseline;
-  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: nowrap;
+  row-gap: 0.3rem;
+  column-gap: 0.5rem;
+}
+.wordmark-title {
+  white-space: nowrap;
 }
 .wordmark .seven {
   color: var(--accent);
@@ -53,6 +59,7 @@ body {
 .wordmark .pip {
   color: var(--gold);
   font-size: 0.7em;
+  white-space: nowrap;
 }
 
 /* ---------- home ---------- */
@@ -65,7 +72,7 @@ body {
   text-align: center;
   margin-bottom: 2.25rem;
 }
-.home .wordmark { font-size: 2.5rem; }
+.home .wordmark { font-size: clamp(1.7rem, 8vw, 2.5rem); }
 .home .tagline {
   color: var(--muted);
   margin: 0.5rem 0 0;
@@ -149,6 +156,15 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   border: 1px solid var(--line);
 }
 .btn-ghost:hover:not(:disabled) { border-color: var(--gold); }
+
+.btn-solo {
+  width: 100%;
+  background: transparent;
+  color: var(--turn);
+  border: 1px solid var(--turn);
+  margin-top: 0.6rem;
+}
+.btn-solo:hover:not(:disabled) { background: rgba(87,217,138,0.1); }
 
 .divider {
   text-align: center;
@@ -396,10 +412,12 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.45rem 0.55rem;
+  padding: 0.45rem 0.55rem 0.55rem;
   border-radius: 8px;
   border: 1px solid transparent;
   font-size: 0.9rem;
+  position: relative;
+  overflow: hidden;
 }
 #score-list li.turn {
   border-color: var(--turn);
@@ -409,6 +427,30 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .sb-name { display: flex; align-items: center; gap: 0.4rem; min-width: 0; }
 .sb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb-score { font-family: var(--display); font-weight: 600; color: var(--gold); }
+
+/* ---- score progress strip ---- */
+.sb-bar {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--line);
+  border-radius: 0 0 8px 8px;
+}
+.sb-bar-fill {
+  height: 100%;
+  width: var(--bar-pct, 0%);
+  background: linear-gradient(
+    to right,
+    #4ade80 0%,
+    #facc15 40%,
+    #f97316 70%,
+    #ef4444 100%
+  );
+  background-size: calc(100% / var(--bar-raw, 0.01)) 100%;
+  border-radius: 0 0 8px 8px;
+  transition: width 0.4s ease;
+}
 
 /* felt */
 .felt {
@@ -888,9 +930,51 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .site-footer.compact .footer-links { margin: 0; flex-wrap: wrap; gap: 1rem; }
 .star-link { color: var(--gold) !important; }
 
+@media (max-width: 560px) {
+  .wordmark { flex-wrap: wrap; }
+}
+
 @media (max-width: 640px) {
   .site-footer.compact { padding: 0.5rem 0.75rem; }
   .site-footer.compact .footer-links { gap: 0.8rem; font-size: 0.8rem; }
   .reaction-fab { width: 46px; height: 46px; font-size: 1.3rem; }
   .reaction-dock { left: 10px; bottom: 10px; }
+}
+
+/* ---------- small phones: general mobile polish ---------- */
+@media (max-width: 480px) {
+  .home { padding: clamp(1.25rem, 6vh, 2.5rem) 1rem 2.25rem; }
+  .card-panel { padding: 1.1rem; }
+  .settings-grid { grid-template-columns: 1fr; }
+
+  .topbar { padding: 0.7rem 0.85rem; gap: 0.5rem; }
+  .topbar-right { flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+  .rules-btn { font-size: 0.8rem; padding: 0.4rem 0.7rem; min-height: 36px; }
+  .rules-btn .rb-ico { display: none; }
+  .icon-btn { width: 36px; height: 36px; font-size: 1rem; }
+  .round-chip, .turn-timer { font-size: 0.75rem; padding: 0.25rem 0.55rem; }
+
+  .lobby { padding: 1.25rem 0.9rem; }
+  .code-banner .code { font-size: 2.1rem; letter-spacing: 0.22em; }
+  .roster li { padding: 0.6rem 0.75rem; }
+  .settings-edit, .settings-readout { grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); }
+
+  .table-view { padding: 0.75rem 0.6rem 1.5rem; gap: 0.75rem; }
+  .felt { padding: 0.85rem; gap: 0.9rem; }
+  .center-row { gap: 1rem; min-height: 110px; }
+  .deck img { width: 54px; height: 76px; }
+  .center-card { width: 50px; height: 70px; }
+  .discard { min-width: 74px; }
+  .seat { min-width: 0; padding: 0.5rem 0.6rem; gap: 0.5rem; }
+  .card.mini { width: 24px; height: 34px; }
+
+  .card.hand-card { width: 58px; height: 82px; }
+  .hand { gap: 0.35rem; }
+  .action-bar { gap: 0.5rem; }
+  .play-label { min-width: 0; flex: 1 1 100%; text-align: center; }
+  .action-btns { flex: 1 1 100%; justify-content: center; }
+
+  .modal { padding: 1.15rem 1.1rem; max-height: 88vh; }
+  .modal.roundend { max-width: 100%; }
+  .re-card { width: 32px; height: 45px; }
 }
