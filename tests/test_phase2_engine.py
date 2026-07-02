@@ -62,13 +62,28 @@ check(action == ACTION_SEQUENCE and not owes, "sequence draws nothing")
 check(r.last_was_combo and r.center_rank_set() == {4, 5, 6}, "sequence is matchable")
 
 # ---- match: after a combo, throw matching ranks; no chaining ----
+# Default config (MATCH_REQUIRES_DRAW = False): match behaves like a no-draw combo.
 r = make_room([Card(9, "C")], [Card(3, "S"), Card(4, "D")],
               center=[Card(2, "H"), Card(3, "H"), Card(4, "H")], last_combo=True)
 r.turn_index = 1  # P2 to act
 action, owes = throw(r, "P2", ["3S", "4D"])
-check(action == ACTION_MATCH and owes, "match throws matching ranks (distinct) and owes a draw")
+check(action == ACTION_MATCH and not owes, "match throws matching ranks (distinct) and owes no draw by default")
+check(r.current_turn_id() == "P1", "no-draw match passes the turn immediately")
 check(not r.last_was_combo, "a match is not a combo")
 check({c.id for c in r.center_throw} == {"3S", "4D"}, "center now shows the matched cards")
+
+# ---- match: legacy behavior still available via config.MATCH_REQUIRES_DRAW ----
+import config as _config
+_config.MATCH_REQUIRES_DRAW = True
+import game.room as _room_mod
+_room_mod.MATCH_REQUIRES_DRAW = True  # module-level import needs patching too
+r = make_room([Card(9, "C")], [Card(3, "S"), Card(4, "D")],
+              center=[Card(2, "H"), Card(3, "H"), Card(4, "H")], last_combo=True)
+r.turn_index = 1  # P2 to act
+action, owes = throw(r, "P2", ["3S", "4D"])
+check(action == ACTION_MATCH and owes, "match owes a draw when MATCH_REQUIRES_DRAW is True")
+_room_mod.MATCH_REQUIRES_DRAW = False
+_config.MATCH_REQUIRES_DRAW = False  # restore default for any later tests in this run
 
 # ---- priority: set beats match ----
 r = make_room([Card(3, "H"), Card(3, "S"), Card(3, "D")], [Card(7, "S")],
