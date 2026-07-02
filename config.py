@@ -43,6 +43,7 @@ EMPTY_ROOM_TTL = 60
 # and the turn advances immediately with no draw required.
 # This is a server-only toggle — deliberately NOT part of DEFAULT_SETTINGS, so
 # it can't be changed per-room from the lobby settings UI.
+# Test this later for single match.
 MATCH_REQUIRES_DRAW = False
 
 # ---- Runtime / deployment ----
