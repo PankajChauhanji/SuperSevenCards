@@ -4,13 +4,15 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT app:app
+    startCommand: python3 app.py
     envVars:
       - key: PYTHON_VERSION
-        value: "3.12.3"  # <--- This forces Render to use a stable Python version
+        value: "3.12.3"
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
         sync: false
       - key: FLASK_DEBUG
         value: "0"
+      - key: PORT
+        value: "10000"

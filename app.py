@@ -1,9 +1,12 @@
 """Super Seven — application entrypoint.
 
 eventlet is monkey-patched first (before any stdlib networking import) so the
-single eventlet worker can run cooperative sockets and, from Phase 4, the turn
-timer. All room state lives in one in-memory RoomManager, which is why
-production must run exactly one worker.
+single eventlet worker can run cooperative sockets and the turn-timer director
+background task. All room state lives in one in-memory RoomManager, which is
+why production must run exactly one worker.
+
+Deployment: use `python3 app.py` (not gunicorn) so eventlet's own server
+handles the process — this guarantees start_background_task() works correctly.
 """
 import eventlet
 eventlet.monkey_patch()
@@ -43,4 +46,7 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=config.PORT,
         debug=config.FLASK_DEBUG,
+        use_reloader=False,   # reloader spawns a child process which breaks
+                              # the single-worker eventlet model and background tasks
+        log_output=True,
     )
