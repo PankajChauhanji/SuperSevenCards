@@ -36,7 +36,7 @@ def register(socketio, manager):
 
     def _auto_end_if_stuck(room):
         """End the round automatically if no one can act (everyone safe)."""
-        if room.state == STATE_IN_TURN and room.active_count() == 0:
+        if room.state == STATE_IN_TURN and room.active_count() <= 1:
             result = room.end_round(None)
             emit("round_end", room.round_end_payload(result), to=room.code)
             return True
@@ -75,8 +75,9 @@ def register(socketio, manager):
             },
             to=room.code,
         )
-        # The thrower's hand changed — send it privately.
-        emit("your_hand", {"cards": room.hand_for(user_id)})
+        # The thrower's hand changed — send it privately, including owes_draw
+        # so the client updates awaitingDraw immediately without waiting for table_state.
+        emit("your_hand", {"cards": room.hand_for(user_id), "owes_draw": owes_draw})
         # If that throw left nobody able to act, the round auto-ends.
         if _auto_end_if_stuck(room):
             return
@@ -133,5 +134,8 @@ def register(socketio, manager):
         emit("round_start", room.public_round_state(), to=room.code)
         # Deal hands privately; eliminated players receive an empty hand so
         # their old cards clear and they continue as spectators.
+        # Bot players have no socket — skip them.
         for player in room.connected_players():
+            if player.is_bot:
+                continue
             emit("your_hand", {"cards": room.hand_for(player.user_id)}, to=player.sid)

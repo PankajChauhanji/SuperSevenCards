@@ -52,6 +52,31 @@ def register(socketio, manager):
         room = manager.create_room(user_id, name, settings)
         emit("room_created", {"code": room.code})
 
+    # ---- single-player mode ----
+    @socketio.on("create_solo")
+    def on_create_solo(data):
+        """Create a room and pre-register the Suryavanshi bot as player 2.
+
+        The bot has a fixed user_id so the director can identify it cheaply.
+        The human is the host and can still edit settings before starting.
+        """
+        data = data or {}
+        name = _clean_name(data.get("name"))
+        user_id = data.get("user_id")
+        if not user_id:
+            return error("Missing identity.")
+        if not name:
+            return error("Pick a name first.")
+        settings = _clean_settings(data.get("settings"))
+        room = manager.create_room(user_id, name, settings)
+
+        # Register the bot — mark it connected so it counts toward MIN_PLAYERS.
+        bot = room.register_player("bot_suryavanshi", "Suryavanshi")
+        bot.is_bot = True
+        bot.connected = True   # bot is always "present"
+
+        emit("room_created", {"code": room.code, "solo": True})
+
     @socketio.on("join_room")
     def on_join(data):
         data = data or {}
@@ -141,7 +166,10 @@ def register(socketio, manager):
         room.start_round()
         emit("round_start", room.public_round_state(), to=code)
         # Each player privately receives only their own hand — never others'.
+        # Bot players have no socket sid so we skip the emit for them.
         for player in room.connected_players():
+            if player.is_bot:
+                continue
             emit("your_hand", {"cards": room.hand_for(player.user_id)}, to=player.sid)
 
     @socketio.on("rematch")
@@ -182,6 +210,8 @@ def register(socketio, manager):
             return error("That player isn't in the room.")
         if target == room.host_id:
             return error("You can't remove yourself.")
+        if room.players[target].is_bot:
+            return error("You can't remove the computer player.")
 
         target_sid = room.players[target].sid
         room.remove_player(target)
