@@ -37,6 +37,14 @@ SETTINGS_BOUNDS = {
 # Seconds a room with zero connected players is kept before being reaped.
 EMPTY_ROOM_TTL = 60
 
+# ---- Match-play draw rule ----
+# If True, a Match still owes a draw afterwards (legacy behavior, same as a
+# Single/Pair). If False, a Match behaves like a no-draw combo (Set/Sequence)
+# and the turn advances immediately with no draw required.
+# This is a server-only toggle — deliberately NOT part of DEFAULT_SETTINGS, so
+# it can't be changed per-room from the lobby settings UI.
+MATCH_REQUIRES_DRAW = False
+
 # ---- Runtime / deployment ----
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")

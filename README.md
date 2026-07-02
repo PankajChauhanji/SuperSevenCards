@@ -38,7 +38,7 @@ Shed the points in your hand. When you think you have the lowest total, call **S
 - **Discard** — throw one card, then draw one from the deck.
 - **Set** — throw 3 or 4 cards of the same rank. No draw needed.
 - **Sequence** — throw 3+ cards in a run (suits don't matter). No draw needed.
-- **Match** — if the player before you threw a combo, throw any cards whose ranks appear in it, then draw one.
+- **Match** — if the player before you threw a combo, throw any cards whose ranks appear in it. No draw needed (configurable in `config.py` via `MATCH_REQUIRES_DRAW`).
 
 ### Going to Zero
 Empty your hand completely and your round score locks at **0** — you're safe and sit out the rest of the round.
