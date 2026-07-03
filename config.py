@@ -8,7 +8,7 @@ import os
 
 # ---- Room / table limits ----
 MIN_PLAYERS = 2
-MAX_PLAYERS = 6
+MAX_PLAYERS = 20
 ROOM_CODE_LENGTH = 4
 HAND_SIZE = 7
 
