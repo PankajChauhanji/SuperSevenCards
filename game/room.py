@@ -28,6 +28,7 @@ class Room:
     def __init__(self, code: str, host_id: str, settings: dict):
         self.code = code
         self.host_id = host_id
+        self.original_host_id = host_id   # restored once back in the lobby (rematch)
         self.settings = settings
         self.players: Dict[str, Player] = {}   # user_id -> Player
         self.state = STATE_LOBBY
@@ -341,6 +342,27 @@ class Room:
         remaining = self.non_eliminated()
         self.game_over = len(remaining) <= 1
         self.winner = remaining[0] if (self.game_over and remaining) else None
+        self._migrate_host_if_eliminated()
+
+    def _migrate_host_if_eliminated(self) -> None:
+        """Hand the host role to a stand-in once the host is eliminated.
+
+        Picks the connected, still-in-play, non-bot player with the lowest
+        cumulative score (most likely to survive longest, so this fires as
+        rarely as possible over the rest of the game). Ties break on player
+        registration order for a deterministic pick. No-op if the host isn't
+        eliminated, or if no eligible stand-in is connected right now.
+        """
+        host = self.players.get(self.host_id)
+        if host is None or not host.eliminated:
+            return
+        candidates = [
+            p for p in self.players.values()
+            if p.connected and not p.eliminated and not p.is_bot
+        ]
+        if not candidates:
+            return
+        self.host_id = min(candidates, key=lambda p: p.total_score).user_id
 
     def round_end_payload(self, result: dict) -> dict:
         """Full reveal — hands are public now that the round is over."""
@@ -402,6 +424,7 @@ class Room:
             player.eliminated = True
             self.awaiting_draw = False
             self.advance_turn()
+            self._migrate_host_if_eliminated()
         elif self.awaiting_draw:
             drawn = self.draw_one(user_id)["card"]
         elif player.hand:
@@ -433,7 +456,15 @@ class Room:
         return self.state == STATE_IN_TURN
 
     def reset_for_rematch(self) -> None:
-        """Wipe scores/eliminations and return everyone to the lobby."""
+        """Wipe scores/eliminations and return everyone to the lobby.
+
+        Any mid-game host migration (see _migrate_host_if_eliminated) is only
+        a stand-in for the rest of that game — restore the room's original
+        host now, provided they're still connected to take the role back.
+        """
+        original = self.players.get(self.original_host_id)
+        if original is not None and original.connected:
+            self.host_id = self.original_host_id
         for p in self.players.values():
             p.hand = []
             p.round_score = 0
@@ -465,11 +496,18 @@ class Room:
     # ---- host migration ----
     def migrate_host(self) -> Optional[str]:
         """Promote the next connected player to host. Returns new host id.
-        Bot players are never promoted to host — they can't interact with the UI."""
-        if self.host_id in self.players and self.players[self.host_id].connected:
+        Bot players are never promoted to host — they can't interact with the
+        UI. Eliminated players are skipped too — they're spectating, not
+        playing, so they'd have no stake in decisions like starting the next
+        round. Returns None (host_id left unchanged) if no one qualifies."""
+        if (
+            self.host_id in self.players
+            and self.players[self.host_id].connected
+            and not self.players[self.host_id].eliminated
+        ):
             return self.host_id
         for player in self.players.values():
-            if player.connected and not player.is_bot:
+            if player.connected and not player.is_bot and not player.eliminated:
                 self.host_id = player.user_id
                 return self.host_id
         return None
