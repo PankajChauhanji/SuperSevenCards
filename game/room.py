@@ -387,6 +387,7 @@ class Room:
             "eliminated": list(self.newly_eliminated),
             "game_over": self.game_over,
             "winner": self.winner,
+            "host_id": self.host_id,
         }
 
     def standings(self) -> List[dict]:
@@ -409,6 +410,7 @@ class Room:
             "winner_name": self.players[self.winner].name if self.winner else None,
             "standings": self.standings(),
             "players": self.public_players(),
+            "host_id": self.host_id,
         }
 
     # ---- timeout handling (driven by the director loop) ----
