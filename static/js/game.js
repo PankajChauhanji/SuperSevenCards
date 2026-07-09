@@ -190,6 +190,7 @@
   socket.on("round_end", (data) => {
     view.state = "ROUND_END";
     view.secondsLeft = null;
+    if (data.host_id) view.hostId = data.host_id;
     if (data.players) view.players = data.players;
     if (tableView.style.display !== "none") Table.render(view);
     if (window.Selection) window.Selection.refresh();
@@ -204,6 +205,7 @@
   socket.on("game_end", (data) => {
     view.state = "GAME_END";
     view.secondsLeft = null;
+    if (data.host_id) view.hostId = data.host_id;
     if (data.players) view.players = data.players;
     syncTimer();
     showGameOver(data.winner, data.standings);
