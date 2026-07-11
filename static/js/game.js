@@ -55,6 +55,8 @@
     view.state = data.state;
     view.players = data.players;
     if (data.settings) view.settings = data.settings;
+    view.tableTheme = data.table_theme || "default";
+    syncTableTheme();
     sync();
   });
 
@@ -69,6 +71,8 @@
     view.hostId = data.host_id;
     view.players = data.players;
     if (data.settings) view.settings = data.settings;
+    view.tableTheme = data.table_theme || "default";
+    syncTableTheme();
     view.hand = [];
     view.justDrawnId = null;
     view.secondsLeft = null;
@@ -103,6 +107,7 @@
     view.players = data.players;
     if (data.host_id) view.hostId = data.host_id;
     if (data.settings) view.settings = data.settings;
+    if (data.table_theme) view.tableTheme = data.table_theme;
     view.currentTurn = data.current_turn;
     view.turnOrder = data.turn_order;
     view.deckCount = data.deck_count;
@@ -114,6 +119,7 @@
     view.firstOrbitComplete = !!data.first_orbit_complete;
     if (typeof data.turn_seconds_left === "number") view.secondsLeft = data.turn_seconds_left;
     view.pickSecondsLeft = (typeof data.pick_seconds_left === "number") ? data.pick_seconds_left : null;
+
 
     // Sound cue when the turn becomes mine.
     if (view.state === "IN_TURN" && view.currentTurn === youId && prevTurn !== youId) {
@@ -253,6 +259,10 @@
     tableView.style.display = inRound ? "flex" : "none";
     const dock = document.getElementById("reaction-dock");
     if (dock) dock.style.display = inRound ? "flex" : "none";
+
+    syncThemeSelectorVisibility();
+    syncTableTheme();
+
     if (inRound) {
       Table.render(view);
     } else {
@@ -722,4 +732,73 @@
       }
     });
   }
+
+  // ---- Table Theme Selector ----
+  const themeSelectWrap = document.getElementById("theme-select-wrap");
+  const themeSelectBtn = document.getElementById("theme-select-btn");
+  const themeDropdown = document.getElementById("theme-dropdown");
+
+  if (themeSelectBtn && themeDropdown) {
+    themeSelectBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = themeDropdown.hasAttribute("hidden");
+      if (isHidden) {
+        themeDropdown.removeAttribute("hidden");
+        themeDropdown.setAttribute("aria-hidden", "false");
+      } else {
+        themeDropdown.setAttribute("hidden", "");
+        themeDropdown.setAttribute("aria-hidden", "true");
+      }
+    });
+
+    themeDropdown.querySelectorAll(".theme-opt").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const theme = btn.dataset.t;
+        socket.emit("change_table_theme", { code, user_id: youId, theme });
+        themeDropdown.setAttribute("hidden", "");
+        themeDropdown.setAttribute("aria-hidden", "true");
+      });
+    });
+
+    document.addEventListener("click", () => {
+      if (themeDropdown) {
+        themeDropdown.setAttribute("hidden", "");
+        themeDropdown.setAttribute("aria-hidden", "true");
+      }
+    });
+  }
+
+  function syncThemeSelectorVisibility() {
+    if (!themeSelectWrap) return;
+    const isHost = view.hostId === youId;
+    themeSelectWrap.style.display = isHost ? "inline-flex" : "none";
+  }
+
+  function syncTableTheme() {
+    const theme = view.tableTheme || "default";
+    document.body.classList.remove("theme-default", "theme-casino", "theme-cyberpunk", "theme-marble");
+    if (theme !== "default") {
+      document.body.classList.add("theme-" + theme);
+    }
+
+    const currentIcon = document.getElementById("current-theme-icon");
+    const currentName = document.getElementById("current-theme-name");
+    if (currentIcon && currentName) {
+      const themeMap = {
+        "default": { icon: "🟢", name: "Default" },
+        "casino": { icon: "🎰", name: "Casino Felt" },
+        "cyberpunk": { icon: "👾", name: "Cyberpunk" },
+        "marble": { icon: "🏛️", name: "Marble Luxury" }
+      };
+      const active = themeMap[theme] || themeMap["default"];
+      currentIcon.textContent = active.icon;
+      currentName.textContent = active.name;
+    }
+  }
+
+  socket.on("table_theme_updated", (data) => {
+    view.tableTheme = data.theme;
+    syncTableTheme();
+  });
 })();

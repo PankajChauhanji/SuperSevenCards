@@ -129,6 +129,7 @@ def register(socketio, manager):
                 "state": room.state,
                 "host_id": room.host_id,
                 "settings": room.settings,
+                "table_theme": getattr(room, "table_theme", "default"),
                 "players": room.public_players(),
             },
         )
@@ -189,7 +190,7 @@ def register(socketio, manager):
         emit(
             "room_reset",
             {"players": room.public_players(), "host_id": room.host_id,
-             "settings": room.settings},
+             "settings": room.settings, "table_theme": getattr(room, "table_theme", "default")},
             to=code,
         )
 
@@ -238,3 +239,19 @@ def register(socketio, manager):
 
         room.settings = _clean_settings(data.get("settings"))
         emit("settings_updated", {"settings": room.settings}, to=code)
+
+    @socketio.on("change_table_theme")
+    def on_change_table_theme(data):
+        data = data or {}
+        code = (data.get("code") or "").strip().upper()
+        user_id = data.get("user_id")
+        theme = data.get("theme", "default")
+        room = manager.get_room(code)
+        if room is None:
+            return error("This room no longer exists.")
+        if not room.is_host(user_id):
+            return error("Only the host can change the table theme.")
+
+        room.table_theme = theme
+        emit("table_theme_updated", {"theme": theme}, to=code)
+
