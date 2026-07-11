@@ -31,7 +31,8 @@ def make_room(p1_hand, p2_hand, draw_pile=None, center=None, last_combo=False):
 
 
 def throw(room, uid, ids):
-    cards = room.card_objects(uid, ids)
+    mapped_ids = [cid if "#" in cid else f"{cid}#0" for cid in ids]
+    cards = room.card_objects(uid, mapped_ids)
     assert cards is not None, "card_objects returned None for %s" % ids
     action = infer_action([c.rank for c in cards], room.center_rank_set())
     owes = room.apply_throw(uid, cards, action)
@@ -43,7 +44,7 @@ r = make_room([Card(9, "C"), Card(2, "H")], [Card(7, "S")], draw_pile=[Card(13, 
 action, owes = throw(r, "P1", ["9C"])
 check(action == ACTION_SINGLE and owes, "single discard owes a draw")
 check(r.awaiting_draw and r.current_turn_id() == "P1", "turn stays on P1 until draw")
-check("9C" not in {c.id for c in r.players["P1"].hand}, "thrown card left the hand")
+check("9C" not in {c.face for c in r.players["P1"].hand}, "thrown card left the hand")
 r.draw_one("P1")
 check(not r.awaiting_draw and r.current_turn_id() == "P2", "draw clears owe and passes turn")
 check(len(r.players["P1"].hand) == 2, "P1 drew back up to 2 cards")
@@ -70,7 +71,7 @@ action, owes = throw(r, "P2", ["3S", "4D"])
 check(action == ACTION_MATCH and not owes, "match throws matching ranks (distinct) and owes no draw by default")
 check(r.current_turn_id() == "P1", "no-draw match passes the turn immediately")
 check(not r.last_was_combo, "a match is not a combo")
-check({c.id for c in r.center_throw} == {"3S", "4D"}, "center now shows the matched cards")
+check({c.face for c in r.center_throw} == {"3S", "4D"}, "center now shows the matched cards")
 
 # ---- match: legacy behavior still available via config.MATCH_REQUIRES_DRAW ----
 import config as _config

@@ -37,10 +37,11 @@ def score_round(
     if caller_id is None:
         return {"scores": dict(totals), "caught": False, "totals": totals}
 
+    is_safe_dict = {uid: is_safe for uid, _, is_safe in participants}
     caller_total = totals[caller_id]
-    others = [uid for uid in totals if uid != caller_id]
+    others_not_safe = [uid for uid in totals if uid != caller_id and not is_safe_dict[uid]]
 
-    caller_wins = all(totals[o] > caller_total for o in others)
+    caller_wins = all(totals[o] > caller_total for o in others_not_safe)
     caught = not caller_wins
 
     scores = {}

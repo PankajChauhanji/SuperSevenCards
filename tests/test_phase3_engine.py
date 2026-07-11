@@ -28,7 +28,8 @@ def make_room(hands, draw_pile=None, safe=()):
 
 
 def throw(room, uid, ids):
-    cards = room.card_objects(uid, ids)
+    mapped_ids = [cid if "#" in cid else f"{cid}#0" for cid in ids]
+    cards = room.card_objects(uid, mapped_ids)
     action = infer_action([c.rank for c in cards], room.center_rank_set())
     return room.apply_throw(uid, cards, action)
 
@@ -41,7 +42,7 @@ r = make_room({
 check(not r.first_orbit_complete, "first orbit incomplete at round start")
 throw(r, "A", ["9C"]); r.draw_one("A")           # A's turn done
 check(not r.first_orbit_complete, "still incomplete after only A has played")
-throw(r, "B", ["9S"]); r.draw_one("B")           # B's turn done
+throw(r, "B", ["2S"]); r.draw_one("B")           # B's turn done
 check(r.first_orbit_complete, "first orbit complete after every player has had a turn")
 check(r.current_turn_id() == "A", "turn returns to A after the first orbit")
 
@@ -66,14 +67,14 @@ res = r.end_round("A")
 check(res["caught"], "caller is caught when someone is lower")
 check(r.players["A"].round_score == 50, "caught caller scores 10+40")
 
-# ---- the trap: a safe player at 0 ----
+# ---- Stop called with safe players present (ignored in comparison) ----
 r = make_room({
     "A": [Card(2, "S")],   # caller, total 2
     "B": [],               # safe at 0
 }, safe={"B"})
 res = r.end_round("A")
-check(res["caught"], "any 0-card player makes the caller caught")
-check(r.players["A"].round_score == 42, "trapped caller scores 2+40")
+check(not res["caught"], "caller wins when they are the only non-safe player left")
+check(r.players["A"].round_score == 0, "winner scores 0 (total 2 - discount 5 floors at 0)")
 check(r.players["B"].round_score == 0, "safe player scores 0")
 
 # ---- auto-end when everyone is safe ----

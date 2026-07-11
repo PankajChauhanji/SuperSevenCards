@@ -51,15 +51,39 @@ parts = hands_to_participants({
 r = score_round(parts, "A", SETTINGS)
 check(r["caught"] and r["scores"]["A"] == 50, "caller beaten -> total+40 (10+40)")
 
-# ---- THE TRAP: someone is safe at 0 -> calling Stop is always caught ----
+# ---- Stop called with safe players present (ignored in comparison) ----
 parts = hands_to_participants({
     "A": [Card(2, "S")],    # 2 (caller, lowest non-zero)
-    "B": [],                # safe, 0
+    "B": [],                # safe, 0 (ignored)
 }, safe={"B"})
 r = score_round(parts, "A", SETTINGS)
-check(r["caught"], "with a 0-card player present, the caller is caught even at total 2")
-check(r["scores"]["A"] == 42, "trapped caller scores 2+40")
+check(not r["caught"], "caller wins when they are the only non-safe player left")
+check(r["scores"]["A"] == 0, "winner scores 0 (total 2 - discount 5 floors at 0)")
 check(r["scores"]["B"] == 0, "safe player scores 0")
+
+# ---- Stop called with 3 players, caller wins against remaining active player ----
+parts = hands_to_participants({
+    "A": [Card(2, "S")],    # 2 (caller)
+    "B": [],                # safe, 0 (ignored)
+    "C": [Card(5, "S")],    # active, 5
+}, safe={"B"})
+r = score_round(parts, "A", SETTINGS)
+check(not r["caught"], "caller wins since 2 < 5 (safe player ignored)")
+check(r["scores"]["A"] == 0, "winner scores 0")
+check(r["scores"]["B"] == 0, "safe player scores 0")
+check(r["scores"]["C"] == 5, "loser scores 5")
+
+# ---- Stop called with 3 players, caller caught by remaining active player ----
+parts = hands_to_participants({
+    "A": [Card(6, "S")],    # 6 (caller)
+    "B": [],                # safe, 0 (ignored)
+    "C": [Card(5, "S")],    # active, 5
+}, safe={"B"})
+r = score_round(parts, "A", SETTINGS)
+check(r["caught"], "caller is caught since 6 >= 5 (safe player ignored)")
+check(r["scores"]["A"] == 46, "caught caller scores 6+40")
+check(r["scores"]["B"] == 0, "safe player scores 0")
+check(r["scores"]["C"] == 5, "other active player scores 5")
 
 # ---- auto-end (everyone safe) ----
 parts = hands_to_participants({"A": [], "B": []}, safe={"A", "B"})

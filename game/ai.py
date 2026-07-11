@@ -64,16 +64,9 @@ def _should_call_stop(room, bot_id: str) -> bool:
     if my_total > BOT_STOP_THRESHOLD:
         return False
 
-    # Never call if any opponent is already safe (they score 0; we'd be caught).
+    # Only call if we are STRICTLY below every opponent's current hand total (ignoring safe and eliminated players).
     for uid, p in room.players.items():
-        if uid == bot_id:
-            continue
-        if p.is_safe:
-            return False
-
-    # Only call if we are STRICTLY below every opponent's current hand total.
-    for uid, p in room.players.items():
-        if uid == bot_id or p.eliminated:
+        if uid == bot_id or p.eliminated or p.is_safe:
             continue
         if _hand_total(p.hand) <= my_total:
             return False  # tied or beaten — don't risk the penalty
