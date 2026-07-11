@@ -44,7 +44,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.04em;
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
   row-gap: 0.3rem;
@@ -60,6 +60,23 @@ body {
   color: var(--gold);
   font-size: 0.7em;
   white-space: nowrap;
+}
+.logo-inline-symbol {
+  height: 1.2em;
+  width: auto;
+  vertical-align: middle;
+  margin-left: 8px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+.logo-inline-symbol:hover {
+  transform: scale(1.1);
+}
+.logo-inline-symbol.small {
+  height: 1.1em;
+  margin-left: 6px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
 
 /* ---------- home ---------- */
@@ -1011,3 +1028,5 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .modal.roundend { max-width: 100%; }
   .re-card { width: 32px; height: 45px; }
 }
+
+
