@@ -22,7 +22,7 @@ check(any(r["name"]=="A" for r in S["B"].get("rx",[])),"reaction carries the sen
 check(any(r["emoji"]=="🔥" for r in S["A"].get("rx",[])),"sender also sees their own reaction")
 
 S["B"]["rx"]=[]
-C["A"].emit("reaction",{"code":code,"user_id":"A","emoji":"💀"}); time.sleep(0.25)
+C["A"].emit("reaction",{"code":code,"user_id":"A","emoji":"👽"}); time.sleep(0.25)
 check(len(S["B"].get("rx",[]))==0,"non-whitelisted emoji is dropped")
 
 S["B"]["rx"]=[]

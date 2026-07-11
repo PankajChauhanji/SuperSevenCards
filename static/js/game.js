@@ -572,17 +572,76 @@
   const rxDock = document.getElementById("reaction-dock");
   const rxFab = document.getElementById("reaction-fab");
   const rxPanel = document.getElementById("reaction-panel");
-  if (rxFab && rxPanel) {
-    rxFab.addEventListener("click", () => { rxPanel.hidden = !rxPanel.hidden; });
-    rxPanel.querySelectorAll(".rx").forEach((btn) => {
+  const rxRecentContainer = document.getElementById("rx-recent-container");
+  const rxRecentGrid = document.getElementById("rx-recent-grid");
+
+  function getRecentReactions() {
+    try {
+      return JSON.parse(localStorage.getItem("super_seven_recent_rx")) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function addRecentReaction(emoji) {
+    let recent = getRecentReactions();
+    recent = recent.filter(e => e !== emoji);
+    recent.unshift(emoji);
+    if (recent.length > 5) recent.pop();
+    localStorage.setItem("super_seven_recent_rx", JSON.stringify(recent));
+    updateRecentGrid();
+  }
+
+  function updateRecentGrid() {
+    if (!rxRecentContainer || !rxRecentGrid) return;
+    const recent = getRecentReactions();
+    if (rxFab && recent.length > 0) {
+      rxFab.textContent = recent[0];
+    }
+    if (recent.length === 0) {
+      rxRecentContainer.style.display = "none";
+      return;
+    }
+    rxRecentContainer.style.display = "flex";
+    rxRecentGrid.innerHTML = "";
+    recent.forEach((emoji) => {
+      const btn = document.createElement("button");
+      btn.className = "rx";
+      btn.dataset.e = emoji;
+      btn.title = emoji;
+      btn.textContent = emoji;
       btn.addEventListener("click", () => {
-        socket.emit("reaction", { code, user_id: youId, emoji: btn.dataset.e });
+        socket.emit("reaction", { code, user_id: youId, emoji });
+        addRecentReaction(emoji);
+        rxPanel.hidden = true;
+      });
+      rxRecentGrid.appendChild(btn);
+    });
+  }
+
+  if (rxFab && rxPanel) {
+    rxFab.addEventListener("click", () => {
+      rxPanel.hidden = !rxPanel.hidden;
+      if (!rxPanel.hidden) {
+        updateRecentGrid();
+      }
+    });
+
+    rxPanel.querySelectorAll("#rx-main-grid .rx").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const emoji = btn.dataset.e;
+        socket.emit("reaction", { code, user_id: youId, emoji });
+        addRecentReaction(emoji);
         rxPanel.hidden = true;
       });
     });
+
     document.addEventListener("click", (e) => {
       if (rxDock && !rxDock.contains(e.target)) rxPanel.hidden = true;
     });
+
+    // Initialize recent grid
+    updateRecentGrid();
   }
 
   socket.on("reaction", (data) => floatReaction(data.emoji, data.name));
@@ -603,7 +662,7 @@
     el.style.left = (10 + Math.random() * 70) + "%";
     el.style.setProperty("--drift", (Math.random() * 60 - 30) + "px");
     layer.appendChild(el);
-    setTimeout(() => el.remove(), 2600);
+    setTimeout(() => el.remove(), 3900);
   }
 
   // ---- selection / actions ----

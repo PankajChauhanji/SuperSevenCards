@@ -844,9 +844,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .rx-float {
   position: absolute;
   bottom: 90px;
-  font-size: 2.4rem;
+  font-size: 2.6rem;
   text-align: center;
-  animation: rxrise 2.5s ease-out forwards;
+  animation: rxrise 3.8s ease-out forwards;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 .rx-float .rx-name {
@@ -861,8 +861,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 @keyframes rxrise {
   0%   { transform: translateY(0) translateX(0) scale(0.6); opacity: 0; }
-  15%  { opacity: 1; transform: translateY(-10px) scale(1.1); }
-  100% { transform: translateY(-55vh) translateX(var(--drift,0)) scale(1); opacity: 0; }
+  12%  { opacity: 1; transform: translateY(-15px) scale(1.0); }
+  100% { transform: translateY(-60vh) translateX(var(--drift,0)) scale(1.6); opacity: 0; }
 }
 
 .reaction-dock {
@@ -884,23 +884,56 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .reaction-fab:hover { transform: scale(1.08); }
 .reaction-panel[hidden] { display: none; }
 .reaction-panel {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  max-width: 232px;
+  width: 232px;
+  z-index: 70;
+  gap: 6px;
 }
-.reaction-panel .rx {
+.rx-recent-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rx-recent-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  color: var(--sub);
+  letter-spacing: 0.05em;
+  font-family: var(--display);
+  margin-left: 2px;
+}
+.rx-recent-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+.rx-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 2px 2px;
+}
+.rx-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+.rx-grid .rx, .rx-recent-grid .rx {
   width: 40px; height: 40px;
   border: none; background: transparent;
   font-size: 1.5rem; cursor: pointer; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
   transition: background 0.12s ease, transform 0.12s ease;
 }
-.reaction-panel .rx:hover { background: rgba(255,255,255,0.08); transform: scale(1.15); }
+.rx-grid .rx:hover, .rx-recent-grid .rx:hover {
+  background: rgba(255,255,255,0.08);
+  transform: scale(1.15);
+}
 
 /* host crown in scoreboard + non-crowding layout */
 .sb-name { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }

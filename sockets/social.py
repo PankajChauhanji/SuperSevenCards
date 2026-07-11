@@ -7,16 +7,8 @@ being used to broadcast arbitrary text.
 from flask_socketio import emit
 
 ALLOWED_REACTIONS = {
-    "\U0001F602",  # 😂 laugh
-    "\U0001F632",  # 😲 surprise
-    "\U0001F92F",  # 🤯 mind blown
-    "\U0001F62D",  # 😭 cry
-    "\U0001F621",  # 😡 anger
-    "\U0001F525",  # 🔥 nice move
-    "\u26A1",      # ⚡ play faster
-    "\U0001F44F",  # 👏 good game
-    "\U0001F60E",  # 😎 smooth move
-    "\U0001F389",  # 🎉 celebration
+    "😂", "😲", "🤯", "😭", "😡", "🔥", "⚡", "👏", "😎", "🎉",
+    "🤡", "💀", "🤫", "🥱", "💩", "👶", "🍿", "🐔", "🦖", "🤦"
 }
 
 
