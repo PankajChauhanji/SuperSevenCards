@@ -777,7 +777,7 @@
 
   function syncTableTheme() {
     const theme = view.tableTheme || "default";
-    document.body.classList.remove("theme-default", "theme-casino", "theme-cyberpunk", "theme-marble");
+    document.body.classList.remove("theme-default", "theme-casino", "theme-cyberpunk", "theme-marble", "theme-red_casino");
     if (theme !== "default") {
       document.body.classList.add("theme-" + theme);
     }
@@ -789,7 +789,8 @@
         "default": { icon: "🟢", name: "Default" },
         "casino": { icon: "🎰", name: "Casino Felt" },
         "cyberpunk": { icon: "👾", name: "Cyberpunk" },
-        "marble": { icon: "🏛️", name: "Marble Luxury" }
+        "marble": { icon: "🏛️", name: "Marble Luxury" },
+        "red_casino": { icon: "🍒", name: "Red Casino" }
       };
       const active = themeMap[theme] || themeMap["default"];
       currentIcon.textContent = active.icon;
