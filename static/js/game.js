@@ -613,17 +613,39 @@
       btn.addEventListener("click", () => {
         socket.emit("reaction", { code, user_id: youId, emoji });
         addRecentReaction(emoji);
-        rxPanel.hidden = true;
       });
       rxRecentGrid.appendChild(btn);
     });
   }
 
   if (rxFab && rxPanel) {
-    rxFab.addEventListener("click", () => {
-      rxPanel.hidden = !rxPanel.hidden;
-      if (!rxPanel.hidden) {
-        updateRecentGrid();
+    let lastFabClickTime = 0;
+    let fabClickTimeout = null;
+
+    rxFab.addEventListener("click", (e) => {
+      const now = Date.now();
+      const diff = now - lastFabClickTime;
+      lastFabClickTime = now;
+
+      if (diff < 300) {
+        // Double click / rapid-fire spam
+        if (fabClickTimeout) {
+          clearTimeout(fabClickTimeout);
+          fabClickTimeout = null;
+        }
+        const recent = getRecentReactions();
+        const emoji = recent[0] || "🤡";
+        socket.emit("reaction", { code, user_id: youId, emoji });
+        addRecentReaction(emoji);
+      } else {
+        // Single click (detecting double click first)
+        fabClickTimeout = setTimeout(() => {
+          fabClickTimeout = null;
+          rxPanel.hidden = !rxPanel.hidden;
+          if (!rxPanel.hidden) {
+            updateRecentGrid();
+          }
+        }, 220);
       }
     });
 
@@ -632,7 +654,6 @@
         const emoji = btn.dataset.e;
         socket.emit("reaction", { code, user_id: youId, emoji });
         addRecentReaction(emoji);
-        rxPanel.hidden = true;
       });
     });
 
