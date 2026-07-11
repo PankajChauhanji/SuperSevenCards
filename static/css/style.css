@@ -297,6 +297,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 .badge.host { background: var(--gold); color: var(--ink); }
 .badge.you  { background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+.badge.next-turn { background: var(--panel-2); color: var(--gold); border: 1px solid var(--gold); }
+.badge.turn-now { background: var(--accent); color: var(--cream); }
 
 .lobby .meta {
   color: var(--muted);
@@ -503,6 +505,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   min-width: 140px;
 }
 .seat.active { border-color: var(--turn); box-shadow: 0 0 0 3px rgba(87,217,138,0.18); }
+.seat.next { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(230,178,60,0.18); }
 .seat.offline { opacity: 0.5; }
 .seat.out { opacity: 0.4; filter: grayscale(0.6); }
 .mini-stack { display: flex; align-items: center; gap: 0.3rem; }

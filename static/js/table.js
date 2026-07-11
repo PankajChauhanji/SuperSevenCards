@@ -71,6 +71,21 @@
         left.appendChild(crown);
       }
 
+      // Calculate nextTurnId
+      let nextTurnId = null;
+      if (state.turnOrder && state.turnOrder.length > 0 && state.currentTurn) {
+        const idx = state.turnOrder.indexOf(state.currentTurn);
+        if (idx !== -1) {
+          nextTurnId = state.turnOrder[(idx + 1) % state.turnOrder.length];
+        }
+      }
+
+      if (p.user_id === state.currentTurn) {
+        left.appendChild(badge("TURN", "turn-now"));
+      } else if (p.user_id === nextTurnId) {
+        left.appendChild(badge("NEXT", "next-turn"));
+      }
+
       const text = document.createElement("span");
       text.className = "sb-text";
       text.textContent = p.name + (p.user_id === state.you ? " (you)" : "");
@@ -102,6 +117,15 @@
     const wrap = document.getElementById("opponents");
     wrap.innerHTML = "";
 
+    // Find next turn
+    let nextTurnId = null;
+    if (state.turnOrder && state.turnOrder.length > 0 && state.currentTurn) {
+      const idx = state.turnOrder.indexOf(state.currentTurn);
+      if (idx !== -1) {
+        nextTurnId = state.turnOrder[(idx + 1) % state.turnOrder.length];
+      }
+    }
+
     // Opponents in seating order, starting after "you" for a stable layout.
     const order = state.turnOrder && state.turnOrder.length
       ? state.turnOrder
@@ -117,6 +141,7 @@
         seat.className = "seat";
         seat.style.setProperty("--seat-color", colorOf(p));
         if (p.user_id === state.currentTurn) seat.classList.add("active");
+        if (p.user_id === nextTurnId) seat.classList.add("next");
         if (!p.connected) seat.classList.add("offline");
         if (p.eliminated) seat.classList.add("out");
 
@@ -137,11 +162,26 @@
         const name = document.createElement("span");
         name.className = "seat-name";
         name.textContent = p.name;
+        
+        // Next/Active turn status indicator
+        const statusRow = document.createElement("div");
+        statusRow.style.display = "flex";
+        statusRow.style.alignItems = "center";
+        statusRow.style.gap = "0.3rem";
+        statusRow.style.marginTop = "0.15rem";
+        if (p.user_id === state.currentTurn) {
+          statusRow.appendChild(badge("TURN", "turn-now"));
+        } else if (p.user_id === nextTurnId) {
+          statusRow.appendChild(badge("NEXT", "next-turn"));
+        }
+
         const score = document.createElement("span");
         score.className = "seat-score";
         score.textContent = p.score + " pts";
+        
         meta.appendChild(name);
         meta.appendChild(score);
+        meta.appendChild(statusRow);
 
         seat.appendChild(stack);
         seat.appendChild(meta);
@@ -173,16 +213,39 @@
   function renderMySeat(state) {
     const seat = document.getElementById("myseat");
     seat.className = "myseat";
-    if (state.you === state.currentTurn) seat.classList.add("active");
+    
+    // Find next turn
+    let nextTurnId = null;
+    if (state.turnOrder && state.turnOrder.length > 0 && state.currentTurn) {
+      const idx = state.turnOrder.indexOf(state.currentTurn);
+      if (idx !== -1) {
+        nextTurnId = state.turnOrder[(idx + 1) % state.turnOrder.length];
+      }
+    }
+
+    if (state.you === state.currentTurn) {
+      seat.classList.add("active");
+    } else if (state.you === nextTurnId) {
+      seat.classList.add("next");
+    }
+    
     seat.innerHTML = "";
 
     const me = state.players.find((p) => p.user_id === state.you);
     const name = document.createElement("span");
     name.className = "seat-name";
     name.textContent = (me ? me.name : "You") + " (you)";
+    
     const tag = document.createElement("span");
     tag.className = "turn-tag";
-    tag.textContent = state.you === state.currentTurn ? "Your turn" : "Waiting";
+    if (state.you === state.currentTurn) {
+      tag.textContent = "Your turn";
+    } else if (state.you === nextTurnId) {
+      tag.textContent = "Up Next \u2794";
+    } else {
+      tag.textContent = "Waiting";
+    }
+    
     seat.appendChild(name);
     seat.appendChild(tag);
   }
