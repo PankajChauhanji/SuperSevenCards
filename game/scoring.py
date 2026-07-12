@@ -4,14 +4,13 @@ A round ends when a player calls Stop (or, rarely, when every player has gone
 safe). Scoring rules (locked):
 
   * Hand total = sum of card point values. A safe (0-card) player totals 0.
-  * Caller strictly lowest (lower than EVERY other player, including any 0):
+  * Caller strictly lowest (lower than all other NOT-SAFE players):
         caller scores max(total - win_discount, 0); others score their hand.
-  * Caller caught (any other player's total <= caller's):
+  * Caller caught (any other not-safe player's total <= caller's):
         caller scores total + stop_penalty; others score their hand.
 
-This means that once anyone is at 0, calling Stop is always a caught call
-(0 <= caller's total, since a caller always holds at least one card) — the
-strategic trap from the rulebook falls out naturally.
+This means that if a player is in the safe zone (score 0), their score is ignored
+for the Stop calculation, allowing other players to still successfully call Stop.
 """
 from typing import List, Optional, Tuple
 

@@ -709,6 +709,55 @@
     if (e.target === modal) modal.classList.remove("open");
   });
 
+  const rulesContainer = document.getElementById('rules-content-container');
+  const rulesTitle = document.getElementById('rules-title');
+  const langBtns = document.querySelectorAll('.lang-btn');
+  const rulesCache = {};
+
+  function loadRules(lang) {
+    if (!rulesContainer || !rulesTitle) return;
+    
+    langBtns.forEach(btn => {
+      if(btn.dataset.lang === lang) {
+        btn.style.background = '#6706ce';
+        btn.style.color = 'white';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = 'inherit';
+      }
+    });
+
+    rulesTitle.innerText = lang === 'hi' ? '📖 नियम पुस्तिका' : '📖 Rule Book';
+
+    if (rulesCache[lang]) {
+      rulesContainer.innerHTML = rulesCache[lang];
+    } else {
+      rulesContainer.innerHTML = '<p>Loading rules...</p>';
+      fetch(`/static/rules/${lang}.html`)
+        .then(res => {
+          if (!res.ok) throw new Error('Network response was not ok');
+          return res.text();
+        })
+        .then(html => {
+          rulesCache[lang] = html;
+          rulesContainer.innerHTML = html;
+        })
+        .catch(err => {
+          rulesContainer.innerHTML = '<p>Error loading rules. Please try again.</p>';
+        });
+    }
+  }
+
+  langBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      loadRules(e.target.dataset.lang);
+    });
+  });
+
+  if (rulesContainer) {
+    loadRules('en');
+  }
+
   // ---- mute toggle ----
   const muteBtn = document.getElementById("mute-btn");
   if (muteBtn && window.SS.sound) {

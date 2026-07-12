@@ -146,28 +146,19 @@
   <!-- Rules modal -->
   <div class="modal-backdrop" id="rules-modal">
     <div class="modal" role="dialog" aria-modal="true" aria-label="Super Seven rules">
-      <h2>How to play Super Seven</h2>
-      <p>Shed the points in your hand, then call <strong>Stop</strong> when you think you are lowest. Lowest cumulative score survives; cross the max and you are out.</p>
+      <div class="rules-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+        <h2 style="margin: 0;" id="rules-title">📖 Rule Book</h2>
+        <div class="lang-toggle" style="display: flex; gap: 4px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px;">
+          <button data-lang="en" class="lang-btn" style="border: none; background: #6706ce; color: white; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85em; transition: background 0.2s;">EN</button>
+          <button data-lang="hi" class="lang-btn" style="border: none; background: transparent; color: inherit; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85em; transition: background 0.2s;">HI</button>
+        </div>
+      </div>
 
-      <h3>Card values</h3>
-      <p>Ace = 1 · numbers = face value · Jack = 11 · Queen = 12 · King = 13.</p>
+      <div id="rules-content-container">
+        <p>Loading rules...</p>
+      </div>
 
-      <h3>On your turn — pick one</h3>
-      <ul>
-        <li><strong>Discard one card</strong> — then draw one from the deck.</li>
-        <li><strong>Pair</strong> — throw two of the same rank, then draw one.</li>
-        <li><strong>Set</strong> — throw 3 or 4 of the same rank; no draw.</li>
-        <li><strong>Sequence</strong> — throw 3+ cards in a run (suits don't matter); no draw.</li>
-        <li><strong>Match</strong> — throw any cards whose ranks are showing in the center pile; no draw needed.</li>
-      </ul>
-
-      <h3>Going to zero</h3>
-      <p>Empty your hand and your round score locks at 0 — you are safe and sit out the rest of the round.</p>
-
-      <h3>Calling Stop</h3>
-      <p>Only at the start of your turn, and never during the first orbit. If you are strictly lowest you win the round (your score drops by the win discount). If anyone ties or beats you, you take a heavy penalty on top of your hand.</p>
-
-      <div class="close-row">
+      <div class="close-row" style="margin-top: 1.5rem;">
         <button class="btn-primary" id="rules-close">Got it</button>
       </div>
     </div>

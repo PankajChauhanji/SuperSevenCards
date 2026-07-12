@@ -19,37 +19,47 @@ A fast-paced real-time multiplayer card game built with **Flask-SocketIO** and *
 | ![Game Lobby](static/img/game_images/super_seven_lobby.png) | ![Game Table](static/img/game_images/super_seven_game_table.png) |
 
 ---
-## 🎮 How to Play
+## 📖 The Official Rule Book
 
-### Objective
-Shed the points in your hand. When you think you have the lowest total, call **Stop**. Cross the score cap and you're eliminated. Last player standing wins.
+### 🎯 1. Game Objective
+The goal is to shed the points in your hand. When you believe your remaining cards have a lower total value than every other active opponent, call **Stop** to end the round. If your cumulative score across multiple rounds exceeds the score cap, you are eliminated. The last player standing wins!
 
-### Card Values
-| Card | Value |
+### 🃏 2. Card Values & Deck
+In Super Seven, **suits do not matter**. Only the rank of the card is used for gameplay and scoring.
+| Card | Point Value |
 |---|---|
-| Ace | 1 |
-| 2 – 10 | Face value |
-| Jack | 11 |
-| Queen | 12 |
-| King | 13 |
+| **Ace** | 1 (Ace is strictly low) |
+| **2 – 10** | Face value |
+| **Jack** | 11 |
+| **Queen** | 12 |
+| **King** | 13 |
 
-### On Your Turn — Pick One
+### 📜 3. General Game Rules
+- Every player is dealt **7 cards** at the start of a round.
+- Turns proceed in order. You have a **40-second timer** to make your move, or the game will auto-play for you.
+- Three consecutive timeouts will result in you being kicked from the game.
 
-- **Discard** — throw one card, then draw one from the deck.
-- **Set** — throw 3 or 4 cards of the same rank. No draw needed.
-- **Sequence** — throw 3+ cards in a run (suits don't matter). No draw needed.
-- **Match** — if the player before you threw a combo, throw any cards whose ranks appear in it. No draw needed (configurable in `config.py` via `MATCH_REQUIRES_DRAW`).
+### 🖐️ 4. Player Options on a Turn
+When it is your turn, you must select one of the following actions. (No-draw actions are always highly strategic!)
 
-### Going to Zero
-Empty your hand completely and your round score locks at **0** — you're safe and sit out the rest of the round.
+- **Single Discard:** Throw any 1 card, then **draw 1 card** from the deck.
+- **Pair:** Throw 2 cards of the *exact same rank*, then **draw 1 card** from the deck.
+- **Set (No Draw):** Throw 3 or 4 cards of the *exact same rank*. You do **not** need to draw a card.
+- **Sequence (No Draw):** Throw 3 or more cards in a consecutive run (e.g., 3-4-5). Ace is strictly low (A-2-3 is valid, but Q-K-A is not). You do **not** need to draw a card.
+- **Match (Free Play):** You may throw any cards that *match* the rank of the cards currently visible in the center pile from the previous player's throw. You can match *any* previous throw (even a single card). You do **not** need to draw a card. *(Note: This behavior is configurable in `config.py` via `MATCH_REQUIRES_DRAW`).*
 
-### Calling Stop
-- You can only call Stop at the **start of your turn**, and never during the **first orbit** (until everyone has played at least once).
-- If you're **strictly the lowest** — you win the round and receive a score discount.
-- If anyone **ties or beats you** — you take a heavy penalty on top of your hand total.
+### 🛡️ 5. Going Safe (The Zero-Point Zone)
+If you manage to empty your hand entirely using a Set, Sequence, or Match, your round score locks at **0 points**. You are now completely **Safe** and sit out for the remainder of the round. 
 
-### Elimination
-Once your cumulative score crosses the cap, you're out. The last player standing wins the game.
+### 🛑 6. Calling Stop (Ending the Round)
+You can call **Stop** to immediately end the round, but it comes with strict conditions:
+- **Timing:** You can *only* call Stop at the **start** of your turn, and you **cannot** call it during the very first orbit of the round (everyone must have played at least once).
+- **Winning:** To successfully call Stop, your hand total must be **strictly lower** than the hand totals of all other *active* players. If successful, you win the round and receive a score discount (default: -5 points).
+- **The Trap (Penalty):** If any active player ties or beats your hand total, you are **caught**. You will absorb your hand total *plus* a heavy penalty (default: +40 points).
+- **The Safe Player Exemption:** Players who are **Safe (0 points)** are completely ignored when determining if a Stop caller wins or gets caught. You only compete against players who are still holding cards!
+
+### ☠️ 7. Elimination & Winning the Game
+Round scores accumulate over time. Once your cumulative total crosses the **Score Cap (default: 100 points)**, you are eliminated. If multiple players cross the cap on the same round, the one with the lowest total score survives. The last player standing wins the entire game.
 
 ---
 
