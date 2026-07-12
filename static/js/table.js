@@ -43,9 +43,15 @@
 
   function renderScoreboard(state) {
     const list = document.getElementById("score-list");
+    const specList = document.getElementById("spectator-list");
+    const specHeading = document.getElementById("spectators-heading");
+    
     list.innerHTML = "";
+    if (specList) specList.innerHTML = "";
+
     // Order by standing: lowest cumulative score leads; eliminated sink.
-    const ordered = state.players.slice().sort(
+    const activePlayers = state.players.filter(p => !p.is_spectator);
+    const ordered = activePlayers.slice().sort(
       (a, b) => (a.eliminated - b.eliminated) || (a.score - b.score)
     );
     // Max score cap comes from room settings broadcast in table_state.
@@ -111,6 +117,70 @@
 
       list.appendChild(li);
     });
+
+    const spectators = state.players.filter(p => p.is_spectator);
+    if (specList && specHeading) {
+      if (spectators.length > 0) {
+        specHeading.style.display = "block";
+        spectators.forEach(p => {
+          const li = document.createElement("li");
+          li.style.display = "flex";
+          li.style.justifyContent = "space-between";
+          li.style.alignItems = "center";
+          li.style.background = "rgba(0,0,0,0.2)";
+          li.style.padding = "0.4rem 0.6rem";
+          li.style.borderRadius = "4px";
+
+          const left = document.createElement("span");
+          left.className = "sb-name";
+          left.appendChild(swatch(p));
+          const dot = document.createElement("span");
+          dot.className = "dot" + (p.connected ? " on" : "");
+          left.appendChild(dot);
+          
+          const text = document.createElement("span");
+          text.className = "sb-text";
+          text.textContent = p.name + (p.user_id === state.you ? " (you)" : "");
+          left.appendChild(text);
+          li.appendChild(left);
+
+          if (p.pending_join) {
+            const tag = document.createElement("span");
+            tag.className = "badge turn-now";
+            tag.style.fontSize = "0.7em";
+            tag.textContent = "Joining next";
+            li.appendChild(tag);
+          } else if (state.hostId === state.you) {
+            const btn = document.createElement("button");
+            btn.className = "icon-btn";
+            btn.innerHTML = "+";
+            btn.title = "Admit to next round";
+            btn.style.width = "24px";
+            btn.style.height = "24px";
+            btn.style.fontSize = "18px";
+            btn.style.lineHeight = "1";
+            btn.style.padding = "0";
+            btn.style.display = "flex";
+            btn.style.alignItems = "center";
+            btn.style.justifyContent = "center";
+            btn.style.background = "rgba(255,255,255,0.15)";
+            btn.style.border = "none";
+            btn.style.borderRadius = "4px";
+            btn.style.cursor = "pointer";
+            btn.addEventListener("click", () => {
+              if (window.SS && window.SS.openSpectatorModal) {
+                window.SS.openSpectatorModal(p.user_id, p.name);
+              }
+            });
+            li.appendChild(btn);
+          }
+          
+          specList.appendChild(li);
+        });
+      } else {
+        specHeading.style.display = "none";
+      }
+    }
   }
 
   function renderOpponents(state) {

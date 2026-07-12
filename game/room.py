@@ -113,7 +113,7 @@ class Room:
         """Deal a fresh round. Active = connected and not eliminated."""
         active = [
             uid for uid, p in self.players.items()
-            if p.connected and not p.eliminated
+            if p.connected and not p.eliminated and not p.is_spectator
         ]
         deck = shuffled_deck(self.settings.get("num_decks", 1))
 
@@ -309,13 +309,24 @@ class Room:
         self.last_caught = result["caught"]
         self.awaiting_draw = False
 
+        # Calculate average for pending spectators using post-round totals
+        in_play = [p for p in self.players.values() if not p.eliminated and not p.is_spectator]
+        avg_score = sum(p.total_score for p in in_play) / len(in_play) if in_play else 0
+
+        for p in self.players.values():
+            if p.is_spectator and p.pending_join:
+                p.total_score = int(round(avg_score + (avg_score * p.join_penalty_pct / 100.0)))
+                p.is_spectator = False
+                p.pending_join = False
+                p.eliminated = False # Ensure they enter active state
+
         self._resolve_eliminations()
         self.state = STATE_GAME_END if self.game_over else STATE_ROUND_END
         self._last_result = result
         return result
 
     def non_eliminated(self) -> List[str]:
-        return [uid for uid, p in self.players.items() if not p.eliminated]
+        return [uid for uid, p in self.players.items() if not p.eliminated and not p.is_spectator]
 
     def _resolve_eliminations(self) -> None:
         """Eliminate anyone at/over the score cap; set game_over and winner.
@@ -476,6 +487,8 @@ class Room:
             p.is_safe = False
             p.eliminated = False
             p.timeout_count = 0
+            p.is_spectator = False
+            p.pending_join = False
         self.state = STATE_LOBBY
         self.round_number = 0
         self.start_offset = 0

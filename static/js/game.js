@@ -758,6 +758,38 @@
     loadRules('en');
   }
 
+  // ---- spectator admit modal ----
+  let admitTargetId = null;
+  const specModal = document.getElementById("spectator-modal");
+  const specCancel = document.getElementById("admit-cancel");
+  const specConfirm = document.getElementById("admit-confirm");
+
+  window.SS.openSpectatorModal = function(targetId, name) {
+    if (!specModal) return;
+    admitTargetId = targetId;
+    document.getElementById("admit-name").textContent = name;
+    document.getElementById("admit-penalty").value = "0";
+    specModal.classList.add("open");
+  };
+
+  if (specCancel) {
+    specCancel.addEventListener("click", () => {
+      specModal.classList.remove("open");
+      admitTargetId = null;
+    });
+  }
+  
+  if (specConfirm) {
+    specConfirm.addEventListener("click", () => {
+      if (admitTargetId) {
+        const penalty = parseInt(document.getElementById("admit-penalty").value, 10) || 0;
+        socket.emit("admit_spectator", { code, user_id: youId, target_id: admitTargetId, penalty: penalty });
+      }
+      specModal.classList.remove("open");
+      admitTargetId = null;
+    });
+  }
+
   // ---- mute toggle ----
   const muteBtn = document.getElementById("mute-btn");
   if (muteBtn && window.SS.sound) {

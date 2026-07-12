@@ -91,15 +91,43 @@ def register(socketio, manager):
 
         already_in = user_id in room.players
         if not already_in:
-            if room.state != STATE_LOBBY:
-                return error("That game has already started.")
             if room.is_full():
                 return error("That room is full.")
             if not name:
                 return error("Pick a name first.")
+            
+            player = room.register_player(user_id, name)
+            if room.state != STATE_LOBBY:
+                player.is_spectator = True
+        else:
+            room.register_player(user_id, name)
 
-        room.register_player(user_id, name)
         emit("join_ok", {"code": code})
+
+    @socketio.on("admit_spectator")
+    def on_admit_spectator(data):
+        data = data or {}
+        code = (data.get("code") or "").strip().upper()
+        user_id = data.get("user_id")
+        target_id = data.get("target_id")
+        penalty = int(data.get("penalty", 0))
+
+        room = manager.get_room(code)
+        if room is None: return error("Room not found.")
+        if not room.is_host(user_id): return error("Only the host can admit spectators.")
+        
+        target = room.players.get(target_id)
+        if target is None: return error("Spectator not found.")
+        if not target.is_spectator: return error("Player is already in the game.")
+        
+        target.pending_join = True
+        target.join_penalty_pct = penalty
+        
+        emit(
+            "player_list",
+            {"players": room.public_players(), "host_id": room.host_id},
+            to=code,
+        )
 
     @socketio.on("enter_room")
     def on_enter(data):

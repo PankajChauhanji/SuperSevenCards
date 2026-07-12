@@ -22,6 +22,9 @@ class Player:
     eliminated: bool = False     # out of the game
     color_index: int = 0         # stable per-player colour (assigned at join)
     is_bot: bool = False         # single-player mode only; never True in group games
+    is_spectator: bool = False   # joined mid-game, watches only
+    pending_join: bool = False   # host allowed them to join next round
+    join_penalty_pct: int = 0    # penalty to apply to average score
 
     def public_view(self) -> dict:
         """Everything other players are allowed to see. No card faces."""
@@ -34,4 +37,6 @@ class Player:
             "connected": self.connected,
             "eliminated": self.eliminated,
             "color": self.color_index,
+            "is_spectator": self.is_spectator,
+            "pending_join": self.pending_join,
         }
