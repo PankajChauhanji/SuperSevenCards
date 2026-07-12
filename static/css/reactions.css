@@ -1,0 +1,178 @@
+/* ---------- Batch 3: reactions, crown, rules button, footer ---------- */
+/* reactions: floating layer + dock + panel */
+.reactions-layer {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 60;
+}
+.rx-float {
+  position: absolute;
+  bottom: 90px;
+  font-size: 2.6rem;
+  text-align: center;
+  animation: rxrise 3.8s ease-out forwards;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+.rx-float .rx-name {
+  display: block;
+  font-size: 0.7rem;
+  font-family: var(--display);
+  color: var(--cream);
+  background: rgba(0,0,0,0.45);
+  border-radius: 8px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+@keyframes rxrise {
+  0%   { transform: translateY(0) translateX(0) scale(0.6); opacity: 0; }
+  12%  { opacity: 1; transform: translateY(-15px) scale(1.0); }
+  100% { transform: translateY(-60vh) translateX(var(--drift,0)) scale(1.6); opacity: 0; }
+}
+
+.reaction-dock {
+  position: fixed;
+  left: 16px; bottom: 16px;
+  z-index: 61;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+}
+.reaction-fab {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: transform 0.12s ease;
+}
+.reaction-fab:hover { transform: scale(1.08); }
+.reaction-panel[hidden] { display: none; }
+.reaction-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  width: 232px;
+  z-index: 70;
+  gap: 6px;
+}
+.rx-recent-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rx-recent-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  color: var(--sub);
+  letter-spacing: 0.05em;
+  font-family: var(--display);
+  margin-left: 2px;
+}
+.rx-recent-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+.rx-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 2px 2px;
+}
+.rx-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+.rx-grid .rx, .rx-recent-grid .rx {
+  width: 40px; height: 40px;
+  border: none; background: transparent;
+  font-size: 1.5rem; cursor: pointer; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+.rx-grid .rx:hover, .rx-recent-grid .rx:hover {
+  background: rgba(255,255,255,0.08);
+  transform: scale(1.15);
+}
+
+/* host crown in scoreboard + non-crowding layout */
+.sb-name { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+.sb-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-score { flex: 0 0 auto; padding-left: 0.5rem; }
+.host-crown { color: var(--gold); font-size: 0.9rem; flex: 0 0 auto; }
+
+/* prominent rules button */
+.rules-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  border: 1px solid var(--gold);
+  background: rgba(230,178,60,0.12);
+  color: var(--gold);
+  font-family: var(--display); font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.15s ease;
+}
+.rules-btn:hover { background: rgba(230,178,60,0.22); }
+.rules-btn .rb-ico { font-size: 1.05rem; }
+
+/* compact footer */
+.site-footer.compact { padding: 0.6rem 1rem; min-height: unset; }
+.site-footer.compact .footer-links { margin: 0; flex-wrap: wrap; gap: 1rem; }
+.star-link { color: var(--gold) !important; }
+
+@media (max-width: 560px) {
+  .wordmark { flex-wrap: wrap; }
+}
+
+@media (max-width: 640px) {
+  .site-footer.compact { padding: 0.5rem 0.75rem; }
+  .site-footer.compact .footer-links { gap: 0.8rem; font-size: 0.8rem; }
+  .reaction-fab { width: 46px; height: 46px; font-size: 1.3rem; }
+  .reaction-dock { left: 10px; bottom: 10px; }
+}
+
+/* ---------- small phones: general mobile polish ---------- */
+@media (max-width: 480px) {
+  .home { padding: clamp(1.25rem, 6vh, 2.5rem) 1rem 2.25rem; }
+  .card-panel { padding: 1.1rem; }
+  .settings-grid { grid-template-columns: 1fr; }
+
+  .topbar { padding: 0.7rem 0.85rem; gap: 0.5rem; }
+  .topbar-right { flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+  .rules-btn { font-size: 0.8rem; padding: 0.4rem 0.7rem; min-height: 36px; }
+  .rules-btn .rb-ico { display: none; }
+  .icon-btn { width: 36px; height: 36px; font-size: 1rem; }
+  .round-chip, .turn-timer { font-size: 0.75rem; padding: 0.25rem 0.55rem; }
+
+  .lobby { padding: 1.25rem 0.9rem; }
+  .code-banner .code { font-size: 2.1rem; letter-spacing: 0.22em; }
+  .roster li { padding: 0.6rem 0.75rem; }
+  .settings-edit, .settings-readout { grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); }
+
+  .table-view { padding: 0.75rem 0.6rem 1.5rem; gap: 0.75rem; }
+  .felt { padding: 0.85rem; gap: 0.9rem; }
+  .center-row { gap: 1rem; min-height: 110px; }
+  .deck img { width: 54px; height: 76px; }
+  .center-card { width: 50px; height: 70px; }
+  .discard { min-width: 74px; }
+  .seat { min-width: 0; padding: 0.5rem 0.6rem; gap: 0.5rem; }
+  .card.mini { width: 24px; height: 34px; }
+
+  .card.hand-card { width: 58px; height: 82px; }
+  .hand { gap: 0.35rem; }
+  .action-bar { gap: 0.5rem; }
+  .play-label { min-width: 0; flex: 1 1 100%; text-align: center; }
+  .action-btns { flex: 1 1 100%; justify-content: center; }
+
+  .modal { padding: 1.15rem 1.1rem; max-height: 88vh; }
+  .modal.roundend { max-width: 100%; }
+}
+

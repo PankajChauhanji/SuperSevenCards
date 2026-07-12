@@ -1,0 +1,214 @@
+/* Super Seven — card-room identity
+   Quiet deep-pine table, warm card-cream surfaces, one vermilion accent held
+   in reserve for the active turn / Stop / selection, gold for host + start. */
+
+:root {
+  --bg:      #0f1f1c;
+  --bg-2:    #142925;
+  --panel:   #193430;
+  --panel-2: #1f3e38;
+  --line:    #2c4d46;
+  --cream:   #f3ecdc;
+  --ink:     #15201d;
+  --text:    #e7efe9;
+  --muted:   #93a9a1;
+  --accent:  #e8593f;  /* active turn, Stop, danger, selection */
+  --gold:    #e6b23c;  /* host badge, Start, confirm */
+  --turn:    #57d98a;  /* current player's boundary */
+  --felt:    #14302a;
+  --radius:  14px;
+  --shadow:  0 18px 40px -24px rgba(0, 0, 0, 0.7);
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --body:    "Inter", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--body);
+  color: var(--text);
+  background:
+    radial-gradient(120% 90% at 50% -10%, var(--bg-2) 0%, var(--bg) 60%);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+/* ---------- wordmark ---------- */
+.wordmark {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  row-gap: 0.3rem;
+  column-gap: 0.5rem;
+}
+.wordmark-title {
+  white-space: nowrap;
+}
+.wordmark .seven {
+  color: var(--accent);
+}
+.wordmark .pip {
+  color: var(--gold);
+  font-size: 0.7em;
+  white-space: nowrap;
+}
+.logo-inline-symbol {
+  height: 1.2em;
+  width: auto;
+  vertical-align: middle;
+  margin-left: 8px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+.logo-inline-symbol:hover {
+  transform: scale(1.1);
+}
+.logo-inline-symbol.small {
+  height: 1.1em;
+  margin-left: 6px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+/* ---------- home ---------- */
+.home {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: clamp(2rem, 6vh, 5rem) 1.25rem 3rem;
+}
+.home header {
+  text-align: center;
+  margin-bottom: 2.25rem;
+}
+.home .wordmark { font-size: clamp(1.7rem, 8vw, 2.5rem); }
+.home .tagline {
+  color: var(--muted);
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+}
+
+.card-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.card-panel h2 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0 0 1rem;
+  letter-spacing: 0.01em;
+}
+
+label {
+  display: block;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 0.4rem;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  padding: 0.7rem 0.85rem;
+  transition: border-color 0.15s ease;
+}
+input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+input.code-input {
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.field { margin-bottom: 1rem; }
+.field:last-child { margin-bottom: 0; }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  transition: transform 0.05s ease, filter 0.15s ease, background 0.15s ease;
+}
+button:active { transform: translateY(1px); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary {
+  width: 100%;
+  background: var(--gold);
+  color: var(--ink);
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+
+.btn-ghost {
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--gold); }
+
+.btn-solo {
+  width: 100%;
+  background: transparent;
+  color: var(--turn);
+  border: 1px solid var(--turn);
+  margin-top: 0.6rem;
+}
+.btn-solo:hover:not(:disabled) { background: rgba(87,217,138,0.1); }
+
+.divider {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0.25rem 0 1.25rem;
+}
+
+/* collapsible settings */
+.settings-toggle {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 0;
+  font-size: 0.82rem;
+  margin-top: 0.85rem;
+  width: auto;
+}
+.settings-toggle:hover { color: var(--text); }
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+.settings-grid.hidden { display: none; }
+.settings-grid label { margin-bottom: 0.3rem; }
+

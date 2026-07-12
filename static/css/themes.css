@@ -1,0 +1,121 @@
+/* ---------- Table Themes ---------- */
+/* 1. Casino Style */
+body.theme-casino .felt {
+  background: radial-gradient(120% 120% at 50% 0%, #15803d 0%, #064e3b 80%) !important;
+  border: 4px solid var(--gold) !important;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0,0,0,0.5) !important;
+}
+body.theme-casino .opponents .seat {
+  background: #022c22 !important;
+  border-color: rgba(230, 178, 60, 0.3) !important;
+}
+
+/* 2. Cyberpunk */
+body.theme-cyberpunk .felt {
+  background: radial-gradient(120% 120% at 50% 0%, #1e1b4b 0%, #03001e 80%) !important;
+  background-image: 
+    radial-gradient(120% 120% at 50% 0%, rgba(30, 27, 75, 0.8) 0%, rgba(3, 0, 30, 0.95) 80%),
+    linear-gradient(rgba(232, 89, 63, 0.06) 1px, transparent 1px), 
+    linear-gradient(90deg, rgba(232, 89, 63, 0.06) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 24px 24px, 24px 24px !important;
+  border: 1.5px solid #06b6d4 !important;
+  box-shadow: inset 0 0 60px rgba(6, 182, 212, 0.2), 0 0 15px rgba(6, 182, 212, 0.1) !important;
+}
+body.theme-cyberpunk .opponents .seat {
+  background: #090520 !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+}
+
+/* 3. Black Marble */
+body.theme-marble .felt {
+  background: radial-gradient(120% 120% at 50% 0%, #2a2b2f 0%, #121316 80%) !important;
+  border: 2px solid var(--gold) !important;
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.9) !important;
+}
+body.theme-marble .opponents .seat {
+  background: #18191c !important;
+  border-color: rgba(230, 178, 60, 0.2) !important;
+}
+
+/* 4. Red Casino Felt */
+body.theme-red_casino .felt {
+  background: radial-gradient(120% 120% at 50% 0%, #b91c1c 0%, #450a0a 80%) !important;
+  border: 4px solid var(--gold) !important;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0,0,0,0.5) !important;
+}
+body.theme-red_casino .opponents .seat {
+  background: #2d0505 !important;
+  border-color: rgba(230, 178, 60, 0.3) !important;
+}
+
+/* ---------- Theme Select Dropdown ---------- */
+.theme-select-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.theme-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+.theme-select-btn:hover {
+  background: var(--panel-2);
+  border-color: var(--muted);
+}
+.theme-icon {
+  font-size: 1.1rem;
+}
+.theme-name {
+  white-space: nowrap;
+}
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  z-index: 80;
+  width: 160px;
+}
+.theme-dropdown[hidden] {
+  display: none !important;
+}
+.theme-opt {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+.theme-opt:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+
